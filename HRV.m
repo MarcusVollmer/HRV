@@ -87,8 +87,8 @@ classdef HRV
 %   
 %   Copyright 2015 Marcus Vollmer, marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 15th April 2015
-%   version: 0.1
+%   last modified: 29 May 2015
+%   version: 0.11
 
     properties
     end
@@ -810,7 +810,7 @@ function RR = RRfilter(RR,limit)
     rr_pct = 100*HRV.rrx(RR);
 
     % unreasonable beat differences
-    RR(rr_pct>50 & [rr_pct(2:end)<-50; false]) = NaN; %one inrecognized beat
+    RR(rr_pct>max([limit 50]) & [rr_pct(2:end)<-max([limit 50]); false]) = NaN; %one inrecognized beat
     rr_pct = 100*HRV.rrx(RR);
 
     for wbp_lim = [80:-10:limit]-rem(limit,10)
@@ -821,11 +821,11 @@ function RR = RRfilter(RR,limit)
         rr_pct = 100*HRV.rrx(RR); 
     end
 
-    postmp = find(isnan(RR(1:(end-1))));
+    postmp = find(isnan(RR(1:(end-2))));
     RR(postmp(abs(rr_pct(postmp+2))>15)+1) = NaN; %unreasonble differences after NaN-values
     rr_pct = 100*HRV.rrx(RR);
 
-    postmp = find(abs(rr_pct)>50);
+    postmp = find(abs(rr_pct)>max([limit 50]));
     RR(postmp-1) = NaN; RR(postmp) = NaN; %unreasonble rr_pct values
 
 end
