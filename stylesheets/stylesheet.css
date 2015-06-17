@@ -448,10 +448,10 @@ a:hover {
 }
 
 header {
-  padding-top: 40px;
-  padding-bottom: 40px;
+  padding-top: 20px;
+  padding-bottom: 10px;
   font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
-  background: #2e7bcf url(../images/header-bg.jpg) 0 0 repeat-x;
+  background: #2e7bcf url(../images/halftone_mod_2.png) 0 0 repeat-x;
   border-bottom: solid 1px #275da1;
 }
 
@@ -480,6 +480,15 @@ header h2 {
 .inner {
   position: relative;
   width: 940px;
+  margin: 0 auto;
+}
+
+.myinner {
+  position: relative;
+  width: 940px;
+  height: 152px;
+  background: transparent url(../images/rr_fp.png) no-repeat;
+  background-position: 400px 0px;
   margin: 0 auto;
 }
 
@@ -534,7 +543,7 @@ header a.button {
   position: absolute;
   top: 0;
   right: 0;
-  background: transparent url(../images/github-button.png) 0 0 no-repeat;
+  background: transparent url(../images/github-button_2.png) 0 0 no-repeat;
 }
 aside a.button {
   display: block;
@@ -542,7 +551,7 @@ aside a.button {
   padding-left: 64px;
   margin-bottom: 20px;
   font-size: 21px;
-  background: transparent url(../images/download-button.png) 0 0 no-repeat;
+  background: transparent url(../images/download-button_2.png) 0 0 no-repeat;
 }
 
 code, pre {
@@ -654,12 +663,28 @@ form {
   text-indent: 3px;
 }
 
-#main-content h3:before {
-  padding-right: 0.3em;
-  margin-left: -2em;
-  content: "///";
-  color: #9ddcff;
+
+
+@keyframes waveform {
+  from { background-position: 40px 0;}
+  to { background-position: 0 0;}
 }
+
+#main-content h3:before {
+  content: "";
+  display: inline-block;
+  width: 50px;
+  height: 25px;
+  padding-right: 0.3em;
+  margin-left: -70px;
+  background-image: url('../images/waveform_2.png');
+  background-repeat: repeat-x;
+  animation: waveform 1s linear;
+  -webkit-animation-iteration-count: 3; /* Chrome, Safari, Opera */
+  animation-iteration-count: 3;
+}
+
+
 
 #main-content h4 {
   margin-bottom: 8px;
@@ -878,4 +903,3 @@ footer a:hover {
 
 /* Mobile Portrait Size to Mobile Landscape Size (devices and browsers) */
 @media only screen and (max-width: 479px) { }
-
