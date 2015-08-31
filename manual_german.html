@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>HRVTool by Marcus Vollmer - German manual</title>
+  </head>
+
+  <body>
+    <header>
+    <div class="myinner">
+      <div class="inner">
+        <h1 class="rrfp">HRVTool<font size="+3"><sub> 0.94</sub></font></h1>
+        <h2>Analyzing Heart Rate Variability</h2>
+        <a href="https://github.com/MarcusVollmer/HRV" class="button"><small>View project on</small> GitHub</a>
+      </div>
+   </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+
+<h1><a id="german-manual" href="#german-manual" aria-hidden="true"></a>
+German manual</h1>
+
+<p>Mit diesem Programm k&ouml;nnen Sie die Variabilit&auml;t Ihres Herzes oder Anderer untersuchen.
+Als Nutzer haben Sie alle relevanten Parameter und Messdaten auf einen Blick.
+Im Folgenden lernen Sie das Programm n&auml;her kennen.
+Begleitend k&ouml;nnen Sie sich auch das Videotutorial ansehen:
+<pre align="center">
+<iframe width="480" height="270" src="https://www.youtube.com/embed/AKsxiJEeuVM" frameborder="0" allowfullscreen></iframe>
+</pre>
+</p>
+
+<h1>Inhalt</h1>
+<ol start="1" type="I">
+<li><b><a href="#dateiformate">Unterst&uuml;tzte Dateiformate</a></b></li>
+<li><b><a href="#die-benutzeroberflaeche">Die Benutzeroberfl&auml;che</a></b>
+<ul>
+<li><b><a href="#menuezeile">Men&uuml;zeile</a></b></li>
+<li><b><a href="#obere-zeile">Obere Zeile (1)</a></b></li>
+<li><b><a href="#hrv-measures">HRV Measures (2)</a></b></li>
+<li><b><a href="#local-return-map">Local Return Map (3)</a></b></li>
+<li><b><a href="#tachogramm-spektrum">Tachogramm und Spektrum (4)</a></b></li>
+<li><b><a href="#untere-zeile">Untere Zeile (5)</a></b></li>
+</ul>
+</li>
+<li><b><a href="#filterung">Filterung</a></b></li>
+</ol>
+<br>
+
+<h2><a id="dateiformate" href="#dateiformate" aria-hidden="true"></a>
+Unterst&uuml;tzte Dateiformate</h2>
+<p>
+<code>.hrv</code> Daten des Programms ***<br>
+<code>.mat</code> Daten als Vektor einer *.mat-Datei von Matlab/Octave<br>
+<code>.ecg</code> Annotationen im Physionet-Format.<br>
+<code>.csv</code> Textdatei mit RR-Intervallen oder Wellenform.<br>
+<code>.hrm</code> Standardformat der Herzfrequenz-Messger&auml;te von Polar.<br>
+</p>
+
+<p>Bei den Polar-Uhren (z.B. RS800CX/CS600X/V800) ist darauf zu achten, dass das <a href="http://www.polar.com/de/support/how_to_record_heart_rate_with_polar_v800_rr_recording">RR-Recording</a> aktiviert ist.
+ Nicht jedes Ger&auml;t ist dazu f&auml;hig.</p>
+<p>Bis auf das .hrm-Format wird immer erfragt, ob die Daten in Wellenform oder in RR-Intervallen vorliegen und wie hoch die Abtastfrequenz war.</p>
+
+<h2><a id="die-benutzeroberflaeche" href="#die-benutzeroberflaeche" aria-hidden="true"></a>
+Die Benutzeroberfl&auml;che</h2>
+<p>Die Bearbeitungssoftware bietet dem Nutzer eine einfache und &uuml;bersichtliche Bedienoberfl&auml;che, die in 5 Bereiche eingeteilt ist.<br></p>
+<pre align="center"><img src="images/manual/screen_num.png" alt="Darstellung der Benutzeroberfl&auml;che und ihre Einteilung in die verschiedenen Bereiche." border="0"></img></pre>
+<p>
+<ol>
+<li>Im oberen Teil des Fensters befindet sich die grafische Darstellung der RR-Intervalle mit den dazu geh&ouml;rigen Optionen zur Beschriftung, Filterung und Anzeige.</li>
+<br>
+Der mittlere Bereich ist dreigeteilt:
+<li>Links sieht man die &uuml;blichen Parameter zur HRV Analyse.</li>
+<li>Mittig befindet sich die Darstellung aufeinanderfolgender Intervalle.</li>
+<li>Rechts werden die Daten im Tachogramm und Spektrogramm gezeigt.</li>
+<br>
+<li>Im unteren Teil wird auf der linken Seite der zeitliche Verlauf der Herzfrequenz und der HRV-Parameter dargestellt. Rechts davon ist das Streudiagramm aller RR-Intervalle zu sehen (Vorg&auml;nger vs. Nachfolger) - h&auml;ufig auch Poincar&eacute; Plot genannt. Dort lassen sich leicht Artefakte entfernen.</li>
+</ol>
+</p>
+
+<h3><a id="menuezeile" href="#menuezeile" aria-hidden="true"></a>
+Men&uuml;zeile</h3>
+<pre align="center"><img src="images/manual/menubar.png" alt="Die Men&uuml;leiste und ihre Icons." border="0"></img></pre>
+<p>
+<ol>
+<li>&Ouml;ffnen eines neuen Datensatzes</li>
+<li>Speichern der Einstellungen zu den ge&ouml;ffneten Daten (Artefakte, Beschriftungen etc.)</li>
+<li>Drucken</li>
+<li>Vergr&ouml;&szlig;ern (Ziehen Sie ein Fenster um den Bereich im Plot zu vergr&ouml;&szlig;ern)</li>
+<li>Verkleinern</li>
+<li>Verschieben (Halten Sie die linke Maustaste gedr&uuml;ckt um den Plot zu verschieben)</li>
+<li>Dateninformation (W&auml;hlen Sie einen Punkt im Plot aus und Sie erhalten die Koordinaten)</li>
+<li>Markierungsstift (Sie k&ouml;nnen Punkte im Plot markieren)</li>
+<li>Zwischenablage (Kopiert die HRV-Ma&szlig;e in die Zwischenablage)</li>
+<li>Einstellungen (Passen Sie die Schriftart und -gr&ouml;&szlig;e an)</li>
+<li>Betitelung (Geben Sie den Datensatz einen Namen)</li>
+</ol>
+</p>
+
+<h3><a id="obere-zeile" href="#obere-zeile" aria-hidden="true"></a>
+Obere Zeile (1)</h3>
+<h4><a id="rr-intervalle" href="#rr-intervalle" aria-hidden="true"></a>
+RR-Intervall Optionen</h4>
+
+<p>Die obere Zeile zeigt die Zeitreihe mit der Wellenform oder als Impulsfunktion der R-Zacken.</p>
+
+<p>Hier finden sich zudem folgende Optionen:
+<ul>
+<li>
+Eine Auswahl um sich ein bestimmtes Zeitintervall anzuschauen:<br>
+Hierzu gibt man im folgenden Feld <img src="images/manual/1_interval.png" alt="Das Eingabefeld f&uuml;r den gew&auml;hlten Zeitraum in Sekunden." border="0"> den gew&uuml;nschten Zeitraum an, zu dem Sie sich die Herzrate ansehen m&ouml;chten.
+Die Eingabe des Abschnitts erfolgt in Sekunden mit Doppelpunkt getrennt.
+</li>
+<li>
+Es besteht die M&ouml;glichkeit, mit den Buttons <img src="images/manual/1_forward.png" alt="Ein einfacher und ein Doppelpfeil." border="0"> zu fr&uuml;heren oder sp&auml;teren Abschnitten zu springen.
+Ein Klick auf den einfachen Pfeil wechselt die Ansicht zum Folgeintervall. Beim Doppelpfeil werden 5 Intervalle &uuml;bersprungen.
+</li>
+<li>Links neben dem Feld zum Zeitintervall befindet sich ein leeres Eingabefeld <img src="images/manual/1_sectionname.png" alt="" border="0">.
+Die Funktion dieses Feldes ist es, einem Abschnitt eine individuelle Kennung/Beschriftung zu geben, um dem Datensatz zeitlich gebundenen Informationen hinzuzuf&uuml;gen.
+Gibt man in das Feld z.B. <img src="images/manual/1_sectionname_rest.png" alt="'Rest'" border="0"> ein, so wird der ausw&auml;hlte Abschnitt mit diesem Namen beschriftet.
+Der Abschnittsname erscheint dann auch in der Zeile "Continuous HRV parameter" sowie als Name bei den HRV Parametern:
+<pre align="center"><img src="images/manual/screen_rest_600.png" alt="Hier wird gezeigt, wo der Abschnittsname Verwendung findet." border="0"></img></pre>
+</li>
+<li>
+Mit den Buttons <img src="images/manual/1_intervals.png" alt="Intervals" border="0"> und <img src="images/manual/1_proportions.png" alt="Proportions" border="0"> k&ouml;nnen Sich das Intervall zwischen den einzelnen Beats und deren prozentualen Verh&auml;ltnisse anzeigen lassen. Ein weiterer Klick blendet diese auch wieder aus.
+</li>
+<li>
+F&uuml;r die Filterung von Artefakten in den Daten steht das folgende Optionsfeld zur Verf&uuml;gung: <img src="images/manual/1_filter.png" alt="Filtereinstellungen" border="0">. Hier k&ouml;nnen Sie die Sch&auml;rfe der Filterung erh&ouml;hen oder verringern. Je niedriger der Wert ist, desto strenger ist die vorgenommene Filterung und desto mehr Artefakte werden entfernt.
+Falls die Filterung deaktiviert werden soll, gelingt dies &uuml;ber die Eingabe der K&uuml;rzel "NaN" in das Eingabefeld der Filterung <img src="images/manual/1_filter_nan.png" alt="Keine Filterung durch NaN." border="0">.
+</li>
+<li>
+Falsch gesetzten R-Zacken, wie sie bei der QRS-Erkennung auftreten k&ouml;nnen, oder andere st&ouml;rende Artefakte k&ouml;nnen auch auf Wunsch aus der Analyse entfernt werden.
+Dazu bet&auml;tigt man den Button <img src="images/manual/1_removeartifact.png" alt="Remove artifact." border="0">.
+Der Cursor ver&auml;ndert sich daraufhin in ein Kreuz mit dem man in der Zeitreihe sowohl eine oder gleich mehrere R-Zacken ausw&auml;hlen kann.
+Selektieren Sie die R-Zacken mit der linken Maustaste und best&auml;tigen Sie die Letzte mit einem Doppelklick.
+Entfernte R-Zacken sind mit einem Kreuz "X" belegt. Auf dieselbe Weise lassen sich auch gel&ouml;schte R-Zacken wiederherstellen:
+<pre align="center">
+<img src="images/manual/screen_artifact_1_600.png" alt="Die Bedienung des Buttons 'Remove artifact' ver&auml;ndert die Form des Cursors in ein Kreuz." border="0"><br>
+<img src="images/manual/screen_artifact_2_600.png" alt="Sobald die R-Zacke ausgew&auml;hlt ist, erscheint an dieser Stelle ein farbiges Kreuz." border="0"><br>
+<img src="images/manual/screen_artifact_3_600.png" alt="Die letzte R-Zacke wird mit einem Doppelklick best&auml;tigt, um die Auswahl zu beenden. Die entsprechenden Zacken als 'Unklar' eingestuft und entsprechende Intervalle mit 'NaN' ersetzt." border="0">
+</pre>
+</li>
+</ul>
+</p>
+
+
+<h3><a id="mittlere-zeile" href="#mittlere-zeile" aria-hidden="true"></a>
+Mittlere Zeile (2,3,4)</h3>
+
+<h4><a id="hrv-measures" href="#hrv-measures" aria-hidden="true"></a>
+HRV Measures (2)</h4>
+<p><b>HRV measures</b> pr&auml;sentiert die Herzfrequenzvaribilit&auml;t.</p>
+<p>
+Die Messdaten teilen sich in einen rosa und einen gr&uuml;n gef&auml;rbten Bereich auf. Der hervorgehobene rosa gef&auml;rbte Bereich enth&auml;lt die Parameter zur Herzfrequenzvaribilt&auml;t durch Nutzung der relativen RR Intervalle (siehe 3).
+Bei den restlichen Ma&szlig;en handelt es sich um die gew&ouml;hnlichen Variabilit&auml;tsma&szlig;e, welche in den Guidelines von 1996 der "Task Force of The European Society of Cardiology and The North American Society of Pacing and Electrophysiology" empfohlen wurden.
+Die globale Ansicht zeigt die berechneten Messgr&ouml;&szlig;en des gesamten Datensatzes an.
+Die lokale Ansicht hingegen enth&auml;lt nur die Messgr&ouml;&szlig;e des gerade betrachteten Zeitintervalls. In kursiver Schrift wird der Abschnitt (in Sekunden) konkretisiert.
+<pre align="center">
+<img src="images/manual/2_hrv_f.png" alt="&Uuml;bersicht &uuml;ber die HRV Parameter" border="0">
+</pre>
+</p>
+
+<h4><a id="local-return-map" href="#local-return-map" aria-hidden="true"></a>
+Local Return Map (3)</h4>
+<p>In der <b>Local Return Map</b> werden relativen oder absoluten RR Intervalle in einem Streudiagramm dargestellt. Jeder Punkt entspricht einem Paar von aufeinanderfolgenden Intervallen.
+<pre align="center">
+<img src="images/manual/screen_localreturnmap_f.png" alt="'Local Return Map'" border="0">
+</pre>
+</p>
+<p>
+Die Lage der Punkte verdeutlicht die Variabilit&auml;t der RR Intervalle des derzeitig ausgew&auml;hlten Abschnitts.
+Die Ansicht l&auml;sst sich leicht &auml;ndern:
+<pre align="center">
+<img src="images/manual/3_options.png" alt="Men&uuml;leiste der 'Local Return Map'" border="0">
+</pre>
+</p>
+<p>
+<ul>
+<li>
+Mit dem Button <img src="images/manual/3_rr.png" alt="Wechsel zwischen Absoluten und Relativen Intervallen" border="0"> wechseln Sie zwischen den absoluten (RR Intervalle in Sekunden) und den relativen Werten (rr Intervalle in Prozent).
+</li>
+<li>
+Mit dem Button <img src="images/manual/3_numbering.png" alt="'Numerierung'" border="0"> kann man die Punkte in deren Reihenfolge nummerieren lassen.
+</li>
+<li>
+Mit dem Button <img src="images/manual/3_footprint.png" alt="'Footprint'" border="0"> (Footprint) wird die Punktwolke gespeichert und die zugeh&ouml;rigen HRV-Parameter werden zum Vergleich mit anderen Intervallen in einer dritten Spalte aufgelistet. Das Streudiagramm des Fu&szlig;abdrucks erscheint in grauer Farbe, um Ihnen zu erm&ouml;glichen, zwei Intervalle gegeneinander abzutragen und miteinander zu vergleichen.
+</li>
+<li>
+Mit dem Button <img src="images/manual/3_pdf.png" alt="'PDF (Probability Density Function)'" border="0"> erscheint unten links ein kleines quadratisches Feld, das die Dichtefunktion (Kerndichtesch&auml;tzer) vom Abstand der Punktwolke zum Koordinatenmittelpunkt zeigt. Au&szlig;erdem werden der Median und Quartilsabstand (IQR) eingeblendet.
+</li>
+<li>
+Mit den Buttons <img src="images/manual/3_biggersmaller.png" alt="'Gr&ouml;&szlig;er und Kleiner'" border="0"> l&auml;sst sich die Gr&ouml;&szlig;e der Punkte ver&auml;ndern.
+</li>
+<li>
+Mit dem Button <img src="images/manual/3_linetype.png" alt="'Linientyp'" border="0"> kann man den Linientyp variieren.
+Mit jeder Bet&auml;tigung des Buttons &auml;ndern die Verbindungslinien, bis sie wieder die urspr&uuml;ngliche Form einnehmen.
+</li>
+<li>
+Mit dem Button <img src="images/manual/3_animation.png" alt="'Animation'" border="0"> l&auml;sst sich eine Animation der Variabilit&auml;t starten und die Geschwindigkeit einstellen.
+Die Zahl gibt den Faktor an, mit der die Animation laufen soll. Eine "1" bedeutet Echtzeit, eine "2" die Animation in doppelter Geschwindigkeit.
+</li>
+</ul>
+</p>
+
+
+<h4><a id="tachogramm-spektrum" href="#tachogramm-spektrum" aria-hidden="true"></a>
+Tachogramm und Spektrum (4)</h4>
+<p>
+Auf der ganz rechten Seite in der mittleren Zeile befinden sich das "RR-Tachogramm" und das "Spectrum of RR-Tachogramm".
+<pre align="center">
+<img src="images/manual/4_tachogramspectrum.png" alt="" border="0">
+</pre>
+</p>
+<p>
+Das <b>RR-Tachogramm</b> stellt die RR Intervalle in Abh&auml;ngigkeit von der Zeit dar.
+Dabei gibt die lokale Ansicht Informationen &uuml;ber das gerade betrachtete Intervall an.
+Die globale Ansicht repr&auml;sentiert den gesamten erhobenen Zeitraum.
+</p>
+<p>
+Bei dem <b>Frequenzspektrum</b> wird das interpolierte RR Tachogramm in Sinuskurven verschiedener Frequenzen zerlegt.
+Das Spektrum bildet die Gewichtung dieser Sinuskurven ab.
+Somit wird dem Benutzer deutlich, welche Frequenzanteile w&auml;hrend der Messung &uuml;berwiegen.
+</p>
+
+<p>
+Die beiden Einheiten verf&uuml;gen &uuml;ber eine globale und eine lokale Ansicht, die sich mit Button <img src="images/manual/4_globallocal.png" alt="Wechsel globale und lokale Ansicht" border="0"> ver&auml;ndern lassen.
+Bei der globalen Ansicht wird f&uuml;r das Spektrum die ungefilterten RR Intervalle genutzt.
+</p>
+
+
+<h3><a id="untere-zeile" href="#untere-zeile" aria-hidden="true"></a>
+Untere Zeile (5)</h3>
+<p>
+Links sehen Sie, wie sich die lokale HRV zeitlich ver&auml;ndert. Rechts sehen Sie die Return map bzw. den Poincar&eacute; Plot von den absoluten RR Intervallen.
+<pre align="center">
+<img src="images/manual/5_screen.png" alt="Die Ansicht des f&uuml;nften Moduls." border="0">
+</pre>
+</p>
+
+<p>
+In dem Abschnitt <b>Continuous HRV parameter</b> sehen Sie die lokalen HRV-Ma&szlig;e jeweils von den letzten 60 Beats zeitlich aufgetragen.
+Die Anzahl an Herzschl&auml;gen, die bei der lokalen Berechnung ber&uuml;cksichtigt werden sollen, kann &uuml;ber Eingabefeld <img src="images/manual/5_settings.png" alt="Einstellungen der fortlaufenden lokalen HRV-Messung." border="0"> festgelegt werden.
+Der zweite Parameter, beschreibt einen &Uuml;berlappungsbereich. Denn Sie werden vielleicht feststellen, dass nicht zu allen m&ouml;glichen Zeitpunkten die lokalen Ma&szlig;e berechnet wurden. Das spart viel Zeit. Ist der Wert auf 0 gestellt, so werden alle 60 Beats die lokalen Ma&szlig;e berechnet (zum 60ten, 120ten, 180ten Zeitpunkt, jeweils immer auf Basis der letzten 60 Beats).
+</p>
+<p>
+Nutzen Sie die M&ouml;glichkeit des Pickers <img src="images/manual/5_picker.png" alt="Picker" border="0">, um mit dem Kreuz einen Bereich mit bereits existierender Kennung/Beschriftung auszuw&auml;hlen und anzeigen zu lassen.<br>
+Wenn man die Funktion <img src="images/manual/5_visibility.png" alt="Visibility on/off" border="0"> bet&auml;tigt, ver&auml;ndert sich der Cursor in ein Kreuz.
+Die darunter befindlichen Parameter k&ouml;nnen dann markiert werden. Best&auml;tigen Sie mit "Doppelklick", um die markierten Parameter ein- und auszublenden. Mit der Bedienung der Buttons <img src="images/manual/5_lfhftinn.png" alt="LF/HF und TINN" border="0"> ist die zus&auml;tzliche Einblendung dieser Paramater m&ouml;glich.
+Da die Berechnungen zeitaufwendiger sind, werden diese standardm&auml;&szlig;ig nicht berechnet.
+</p>
+<p>
+In der <b>Return map</b> werden die absoluten RR-Intervalle der kompletten Zeitreihe in einem Streudiagramm dargestellt.
+Die blauen Punkte werden bei der HRV-Berechnung ber&uuml;cksichtigt. Die orangen Punkte repr&auml;sentieren Ausrei&szlig;er und wurden &uuml;ber die automatische Filterung als Artefakte klassifiziert -  zugeh&ouml;rige Intervalle mit "NaN" belegt.<br>
+Mit dem Picker <img src="images/manual/5_picker.png" alt="Picker" border="0"> l&auml;sst sich ein beliebiger Punkt im Streudiagramm ausw&auml;hlen, um zu dem entsprechenden Abschnitt der Zeitreihe zu springen:
+<pre align="center">
+<img src="images/manual/5_cf_picker.png" alt="Auswahl eines Punktes." border="0"> <img src="images/manual/5_cf_picker2.png" alt="Sprung zum betreffenden Intervall." border="0">
+</pre>
+</p>
+<p>
+Mit dem Symbol <img src="images/manual/5_removeartifact.png" alt="Remove Artifact" border="0"> lassen sich mehrere Koordinaten markieren, die ihrer Ansicht nach die Analyse verf&auml;lschen. Diese werden nach abschlie&szlig;enden Doppelklick als Ausrei&szlig;er gekennzeichnet, f&uuml;r die Analyse entfernt und in der Zeitreihenansicht (obere Zeile) mit einem "X" gekennzeichnet.
+<pre align="center">
+<img src="images/manual/5_cf_removeartifact.png" alt="Auswahl zu entfernender Punkte." border="0"><img src="images/manual/5_cf_removeartifact2.png" alt="Kennzeichnung durch Kreuze" border="0">
+<img src="images/manual/5_cf_removeartifact3.png" alt="Entfernter Herzschlag und deren Folgen." border="0">
+</pre>
+</p>
+
+
+<h2><a id="filterung" href="#filterung" aria-hidden="true"></a>
+Filterung</h2>
+<p><i>Dieser Abschnitt zur automatischen Filterung von Artefakten wird demn&auml;chst verst&auml;ndlicher und konkreter dargestellt. Bitte haben Sie Geduld.</i></p>
+
+<p>
+Bei der Filterung der Daten von Artefakten werden grunds&auml;tzlich zwei Regeln angewendet.
+<ol>
+<li><b>Die erste Regel betrifft das Fehlen von R-Zacken in der Zeitreihe.</b><br>
+<p>
+Bei der ersten Regel ist der Filter stets auf einem Minimalwert von 50% (+50%; -50%) eingestellt.
+Sollte der Filter jedoch auf einem h&ouml;heren Wert als 50% eingestellt werden, &uuml;bernimmt die erste Regel diesen Wert f&uuml;r die Filterung.
+Sollten die Differenz aufeinanderfolgende relativen RR Intervalle au&szlig;erhalb des gesetzten Limits sein, so werden sie als Artefakte identifiziert und mit der Bezeichnung "NaN" markiert.
+</p>
+</li>
+<li><b>Die zweite Regel gilt den F&auml;llen, in welchen die R-Zacken falsch gesetzt wurden.</b><br>
+<p>
+Die zweite Regel trifft zu, wenn zwei aufeinanderfolgende relative RR Intervalle zu kontr&auml;r zueinander sind.
+Sie greift, wenn die &Auml;nderung der Herzfrequenz zu prompt (im physiologisch Unm&ouml;glichen) vonstatten geht.
+Der hier eingestellte Grenzwert wird im Feld <img src="images/manual/1_filter.png" alt="Filtereinstellung" border="0"> festgelegt.
+</p>
+</li>
+</ol>
+</p>
+
+
+<br>
+<p>Diese Anleitung entstand zusammen mit Ali Mourad.</p>
+        </section>
+
+        <aside id="sidebar">
+
+<!--           <a href="https://github.com/MarcusVollmer/HRV/" class="button_windows">
+            <small>Installation</small>
+            Windows <small>32/64 Bit</small>
+          </a>
+          <a href="https://github.com/MarcusVollmer/HRV/tarball/master" class="button_mac">
+            <small>Installation</small>
+            MacOSX
+          </a>
+          <a href="https://github.com/MarcusVollmer/HRV/zipball/master" class="button_linux">
+            <small>Installation</small>
+            Linux
+          </a> -->
+
+          <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" class="button_matlab">
+            <small>Installation</small>
+            Matlab App
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/MarcusVollmer/HRV"></a> is maintained by <a href="https://github.com/MarcusVollmer">MarcusVollmer</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a> and Subtle Patterns by <a href="http://subtlepatterns.com/">Atle Mo</a>.</p>
+
+          <a href="https://github.com/MarcusVollmer/HRV/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/MarcusVollmer/HRV/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+        </aside>
+      </div>
+    </div>
+
+
+  </body>
+</html>

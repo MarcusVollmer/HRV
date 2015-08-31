@@ -488,7 +488,7 @@ header h2 {
   width: 940px;
   height: 152px;
   background: transparent url(../images/rr_fp.png) no-repeat;
-  background-position: 400px 0px;
+  background-position: 450px 0px;
   margin: 0 auto;
 }
 
@@ -525,7 +525,7 @@ aside#sidebar p.repo-owner a {
   margin-bottom: 40px;
 }
 
-a.button {
+a.button,a.button_windows,a.button_matlab,a.button_linux,a.button_mac {
   width: 134px;
   height: 58px;
   padding-top: 22px;
@@ -535,15 +535,16 @@ a.button {
   line-height: 1.2;
   color: #fff;
 }
-a.button small {
+a.button small,a.button_windows small,a.button_matlab small,a.button_linux small,a.button_mac small {
   display: block;
   font-size: 11px;
 }
+
 header a.button {
   position: absolute;
   top: 0;
   right: 0;
-  background: transparent url(../images/github-button_2.png) 0 0 no-repeat;
+  background: transparent url(../images/github-button.png) 0 0 no-repeat;
 }
 aside a.button {
   display: block;
@@ -552,6 +553,53 @@ aside a.button {
   margin-bottom: 20px;
   font-size: 21px;
   background: transparent url(../images/download-button_2.png) 0 0 no-repeat;
+}
+aside a.button_windows {
+  display: block;
+  width: 138px;
+  padding-left: 64px;
+  margin-bottom: 20px;
+  font-size: 21px;
+  background: transparent url(../images/download-button_windows.png) 0 0 no-repeat;
+}
+aside a.button_linux {
+  display: block;
+  width: 138px;
+  padding-left: 64px;
+  margin-bottom: 20px;
+  font-size: 21px;
+  background: transparent url(../images/download-button_linux.png) 0 0 no-repeat;
+}
+aside a.button_mac {
+  display: block;
+  width: 138px;
+  padding-left: 64px;
+  margin-bottom: 20px;
+  font-size: 21px;
+  background: transparent url(../images/download-button_macx.png) 0 0 no-repeat;
+}
+aside a.button_matlab {
+  display: block;
+  width: 138px;
+  padding-left: 64px;
+  margin-bottom: 20px;
+  font-size: 21px;
+  background: transparent url(../images/download-button_matlab.png) 0 0 no-repeat;
+}
+
+pre_manual {
+  padding: 15px;
+  overflow: auto;
+  text-shadow: none;
+  font-size: 13px;
+  color: #fff;
+  border: solid 1px #f2f2f2;
+  background: transparent url(../images/halftone_mod.png) 0 0 repeat;
+  -moz-border-radius:10px 10px 10px 10px; /* Firefox */
+  -webkit-border-radius:10px 10px 10px 10px; /* Chrome, Safari */
+  -khtml-border-radius:10px 10px 10px 10px; /* Konqueror */
+  border-radius:10px 10px 10px 10px; /* CSS3 */
+behavior:url(border-radius.htc); /* Internet Explorer */
 }
 
 code, pre {
@@ -807,13 +855,13 @@ footer a:hover {
     width: 740px;
   }
   header h1, header h2 {
-    width: 340px;
+    width: 400px;
   }
   header h1 {
-    font-size: 60px;
+    font-size: 50px;
   }
   header h2 {
-    font-size: 30px;
+    font-size: 25px;
   }
   #main-content {
     width: 490px;

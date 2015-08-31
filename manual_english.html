@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>HRVTool by Marcus Vollmer - English manual</title>
+  </head>
+
+  <body>
+    <header>
+    <div class="myinner">
+      <div class="inner">
+        <h1 class="rrfp">HRVTool<font size="+3"><sub> 0.94</sub></font></h1>
+        <h2>Analyzing Heart Rate Variability</h2>
+        <a href="https://github.com/MarcusVollmer/HRV" class="button"><small>View project on</small> GitHub</a>
+      </div>
+   </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+
+<h1><a id="english-manual" href="#english-manual" aria-hidden="true"></a>
+English manual</h1>
+
+<p>With this program you are able to analyze the variability of your heart or those others.
+As a user you have all relevant parameters and your measured data at one glance.
+In the following you got to know the program in detail.
+An English video tutorial is coming soon. Here is a German one:
+<pre align="center">
+<iframe width="480" height="270" src="https://www.youtube.com/embed/AKsxiJEeuVM" frameborder="0" allowfullscreen></iframe>
+</pre>
+</p>
+
+<h1>Content</h1>
+<ol start="1" type="I">
+<li><b><a href="#supported-file-types">Supported File Types</a></b></li>
+<li><b><a href="#the-interface">The Interface</a></b>
+<ul>
+<li><b><a href="#menubar">Menu bar</a></b></li>
+<li><b><a href="#upper-panel">Upper Panel (1)</a></b></li>
+<li><b><a href="#hrv-measures">HRV Measures (2)</a></b></li>
+<li><b><a href="#local-return-map">Local Return Map (3)</a></b></li>
+<li><b><a href="#tachogram-spectrum">Tachogram and Spectrum (4)</a></b></li>
+<li><b><a href="#lower-panel">Lower Panel (5)</a></b></li>
+</ul>
+</li>
+<li><b><a href="#filtering">Filtering</a></b></li>
+</ol>
+<br>
+
+<h2><a id="supported-file-types" href="#supported-file-types" aria-hidden="true"></a>
+Supported File Types</h2>
+<p>
+<code>.hrv</code> File of the program ***<br>
+<code>.mat</code> Data as a vector of a *.mat-file using Matlab/Octave.<br>
+<code>.ecg</code> Annotations in <a href="http://www.physionet.org/">Physionet</a> format.<br>
+<code>.csv</code> A text file with RR intervals or raw data (waveform).<br>
+<code>.hrm</code> Standard format of heart rate devices of Polar.<br>
+</p>
+
+<p>Please make sure to activate the <a href="http://www.polar.com/support/how_to_record_heart_rate_with_polar_v800_rr_recording">recording of RR intervals</a> if you use Polar watches (e.g. RS800CX/CS600X/V800).
+ Not every device has such capacity.</p>
+<p>For all formats except .hrm you will be questioned about the sampling frequency and whether your data contains the waveform or RR intervals.</p>
+
+<h2><a id="the-interface" href="#the-interface" aria-hidden="true"></a>
+The Interface</h2>
+<p>The user interface gives you an easy-to-use operating surface which is divided in five parts.<br></p>
+<pre align="center"><img src="images/manual/screen_num.png" alt="The user interface and the arrangement in different parts." border="0"></img></pre>
+<p>
+<ol>
+<li>In the upper panel of the program you have the graphics of RR intervals with options for labeling, filtering and display.</li>
+<br>
+The central panel has three sections:
+<li>On the left you have all common parameters for HRV analysis.</li>
+<li>In the middle you have the graphics of successive intervals.</li>
+<li>On the right your data is represented in the Tachogram and Spectrogram.</li>
+<br>
+<li>In the lower panel you see the chronological sequence of heart rates and local HRV parameters on the left. To its right there is the scatterplot of all RR intervals (predecessor vs. successor) - also known as Poincar&eacute; Plot. There you can easily detect and remove artifacts.</li>
+</ol>
+</p>
+
+<h3><a id="menubar" href="#menubar" aria-hidden="true"></a>
+Menu bar</h3>
+<pre align="center"><img src="images/manual/menubar.png" alt="The menu bar with its icons." border="0"></img></pre>
+<p>
+<ol>
+<li>Open a new data set</li>
+<li>Save settings of the current data set (incl. artifacts, labeling etc.)</li>
+<li>Print</li>
+<li>Zoom in (draw a window around the desired region to zoom in)</li>
+<li>Zoom out</li>
+<li>Move (hold down the left mouse button to move the plot)</li>
+<li>Data Tooltip (select a point in a plot to get the coordinates)</li>
+<li>Marker (You can highlight points and lines in a plot)</li>
+<li>Copy to clipboard (copies HRV measures to clipboard)</li>
+<li>Settings (adjust font and font size)</li>
+<li>Labeling (enter a name for the data set)</li>
+</ol>
+</p>
+
+<h3><a id="upper-panel" href="#upper-panel" aria-hidden="true"></a>
+Upper Panel (1)</h3>
+<h4><a id="rr-intervals" href="#rr-intervals" aria-hidden="true"></a>
+RR Interval Options</h4>
+
+<p>The upper panel contains the time series with its waveform or the impulse function of R peaks (heart beats).</p>
+
+<p>Here you have the following options:
+<ul>
+<li>
+The choice to view a particular time interval:<br>
+Therefor you use this edit field <img src="images/manual/1_interval.png" alt="The edit field for the choosen time period in seconds." border="0"> to enter the desired period for which you want to see the heart rates.
+The input is in seconds separated by a colon.
+</li>
+<li>
+You are able to move forward or backwards using the buttons <img src="images/manual/1_forward.png" alt="A single and a double arrow." border="0">.
+A left click on the single arrow moves to the following time period. The fast forward arrow skips 5 intervals.
+</li>
+<li>Left to the field of the time period you see an empty edit field <img src="images/manual/1_sectionname.png" alt="An empty edit field" border="0">.
+The function of that field is to give an individual name to the selected time period. This label may contain additional information.
+If you are writing <img src="images/manual/1_sectionname_rest.png" alt="'Rest'" border="0"> into it, the interval will be labeled with its name.
+The labeling also appears in the middle ("HRV measures") and lower panel ("Continuous HRV parameter"):
+<pre align="center"><img src="images/manual/screen_rest_600.png" alt="The appearance of the labeling is shown." border="0"></img></pre>
+</li>
+<li>
+Use the buttons <img src="images/manual/1_intervals.png" alt="Intervals" border="0"> und <img src="images/manual/1_proportions.png" alt="Proportions" border="0"> to show the intervals between the beats and to show corresponding proportions. Click again to hide.
+</li>
+<li>
+You can control the filtering of artifacts using this options <img src="images/manual/1_filter.png" alt="Filter settings." border="0">. You can increase or decrease the degree of filtering. The less the value, the more strictly is the performed filtering and the more artifacts are removed.
+You can deactivate the filtering by typing "NaN" in the edit field <img src="images/manual/1_filter_nan.png" alt="Deactivate filtering by typing NaN." border="0">.
+</li>
+<li>
+Misplaced R peaks which may occur during the QRS detection or other disturbing artifacts can optionally be removed from the analysis.
+To do so please use the button <img src="images/manual/1_removeartifact.png" alt="Remove artifact." border="0">.
+The cursor changes to a cross and you are able to select one or more R peaks (heart beats) in the time series.
+Select a R peak with a left click and confirm the last peak with a double click.
+Removed R peaks are marked with a small cross "X". In the same way you can restore removed peaks:
+<pre align="center">
+<img src="images/manual/screen_artifact_1_600.png" alt="Using the button 'Remove artifact' the cursor changes its shape to a cross." border="0"><br>
+<img src="images/manual/screen_artifact_2_600.png" alt="As soon as a R peak is selected, a colored cross appears at its position." border="0"><br>
+<img src="images/manual/screen_artifact_3_600.png" alt="The last R peak will be confirmed with a double click to end the selection. Corresponding peaks are classified as 'vague' and adjacent intervals are replaced with 'NaN'." border="0">
+</pre>
+</li>
+</ul>
+</p>
+
+
+<h3><a id="central-part" href="#central-part" aria-hidden="true"></a>
+Central Part (2,3,4)</h3>
+
+<h4><a id="hrv-measures" href="#hrv-measures" aria-hidden="true"></a>
+HRV Measures (2)</h4>
+<p><b>HRV measures</b> represent the Heart Rate Variability.</p>
+<p>
+The results of the analyzed data splits into a rose and green shaped area. The highlighted rose shaped area contains parameters of the Heart Rate Variability (HRV) by using relative RR intervals/ proportions of RR intervals (see 3).
+All other measures are the common measurands of variability which are recommended in the guidelines of 1996 of the "Task Force of The European Society of Cardiology and The North American Society of Pacing and Electrophysiology".
+The global column shows the calculated measurands of the whole data set.
+The local column shows the calculated measurands of the current time period. The period in seconds is shown in italics.
+<pre align="center">
+<img src="images/manual/2_hrv_f.png" alt="Overview of the HRV parameters." border="0">
+</pre>
+</p>
+
+<h4><a id="local-return-map" href="#local-return-map" aria-hidden="true"></a>
+Local Return Map (3)</h4>
+<p>In the <b>Local Return Map</b> relative or absolute RR intervals are displayed in a scatter plot. Every point corresponds to a pair of successive intervals.
+<pre align="center">
+<img src="images/manual/screen_localreturnmap_f.png" alt="'Local Return Map'" border="0">
+</pre>
+</p>
+<p>
+The position of the points illustrates the variability of RR intervals of the currently selected period.
+It's simple to change the view:
+<pre align="center">
+<img src="images/manual/3_options.png" alt="Menu bar of the 'Local Return Map'" border="0">
+</pre>
+</p>
+<p>
+<ul>
+<li>
+Button <img src="images/manual/3_rr.png" alt="Change between absolute and relative intervals" border="0"> changes between absolute (RR intervals in seconds) and relative values (rr intervals in percent).
+</li>
+<li>
+Button <img src="images/manual/3_numbering.png" alt="'Numbering'" border="0"> for consecutively numbering of the points.
+</li>
+<li>
+Button <img src="images/manual/3_footprint.png" alt="'Footprint'" border="0"> (Footprint) to save the scatter cloud and its HRV parameters for comparison with other time periods. Corresponding parameters are shown in a third column. The scatter plot of the footprint is shown in gray to give the possibility to compare two time periods directly.
+</li>
+<li>
+Button <img src="images/manual/3_pdf.png" alt="'PDF (Probability Density Function)'" border="0"> to show on the lower left the kernel density function from the distance of the scatter cloud to its coordinate center. Furthermore the median and inter quartile range (IQR) are shown.
+</li>
+<li>
+Buttons <img src="images/manual/3_biggersmaller.png" alt="'Increase or decrease'" border="0"> to change the size of points.
+</li>
+<li>
+Button <img src="images/manual/3_linetype.png" alt="'Line type'" border="0"> to change the line type.
+Every pressing of the button the line type varies, as soon as the original type is selected.
+</li>
+<li>
+Button <img src="images/manual/3_animation.png" alt="'Animation'" border="0"> starts an animation of the variability and the edit field sets the animation speed.
+The number specifies the factor for which the animation runs. "1" means real time, "2" means double speed.
+</li>
+</ul>
+</p>
+
+
+<h4><a id="tachogram-spectrum" href="#tachogram-spectrum" aria-hidden="true"></a>
+Tachogram und Spectrum (4)</h4>
+<p>
+On the far right of the middle panel you will see the "RR-Tachogram" and the "Spectrum of RR-Tachogram".
+<pre align="center">
+<img src="images/manual/4_tachogramspectrum.png" alt="" border="0">
+</pre>
+</p>
+<p>
+The <b>RR-Tachogram</b> represents the RR intervals in dependence to its time.
+The local view provides information about the current time period.
+The global view shows the complete time period.
+</p>
+<p>
+In the <b>Frequency spectrum</b> the interpolated RR-Tachogram will be decomposed into sine waves of different frequencies.
+The spectrum maps the weights of those sine waves.
+It becomes clear to the user, which frequency components outweigh during the RR measurement.
+</p>
+
+<p>
+Both units have a global and a local view which can be switched by button <img src="images/manual/4_globallocal.png" alt="Switch between global and local view." border="0">.
+The global view shows the spectrum of the unfiltered RR intervals.
+</p>
+
+
+<h3><a id="lower-panel" href="#lower-panel" aria-hidden="true"></a>
+Lower Panel (5)</h3>
+<p>
+On the left you see how the local HRV measures vary in time. On the right you see the return map or Poincar&eacute; Plot of the absolute RR intervals.
+<pre align="center">
+<img src="images/manual/5_screen.png" alt="The lower panel." border="0">
+</pre>
+</p>
+
+<p>
+In the section <b>Continuous HRV parameter</b> you see chronologically plotted the local HRV measures of the last 60 heart beats.
+The number of heart beats which will be considered during the local calculation can be edited here <img src="images/manual/5_settings.png" alt="Setting of continuous calculation of HRV parameter." border="0">.
+The second parameter characterizes the overlap area. Because you may consider that the local measures are not computed for all possible time points. This saves computing time. A value of 0 means that the local measures will be computed for all 60th values (to the 60th, 120th, 180th time point, always on basis of the last known 60 beats).
+</p>
+<p>
+Use the possibility of the picker <img src="images/manual/5_picker.png" alt="Picker" border="0"> to select and view a time period with a labeling.<br>
+A click on <img src="images/manual/5_visibility.png" alt="Visibility on/off" border="0"> turns the cursor into a cross.
+Then you can select some of the parameters below. Confirm with a double click to hide or display selected curves. Use the buttons <img src="images/manual/5_lfhftinn.png" alt="LF/HF and TINN" border="0"> to display these parameters.
+Those calculations a more time consuming and therefore not computed by default.
+</p>
+<p>
+In the <b>Return map</b> the absolute RR intervals of the whole time series are shown in a scatter plot.
+Blue points are considered for HRV evaluation. Orange points represents outlier and were classified by the automatic filtering -  corresponding intervals replaced with "NaN".<br>
+Using the picker <img src="images/manual/5_picker.png" alt="Picker" border="0"> an arbitrary point can be selected in the scatter point in order to jump to its corresponding section of the time series:
+<pre align="center">
+<img src="images/manual/5_cf_picker.png" alt="Choose a point" border="0"> <img src="images/manual/5_cf_picker2.png" alt="Jump to the corresponding interval" border="0">
+</pre>
+</p>
+<p>
+Use the symbol <img src="images/manual/5_removeartifact.png" alt="Remove Artifact" border="0"> to mark some coordinates, which disturbs in your opinion your analysis. After a double click these were marked as outlier, removed from analysis and marked with a "X" in the time series view (upper panel).
+<pre align="center">
+<img src="images/manual/5_cf_removeartifact.png" alt="Select points for removal." border="0"><img src="images/manual/5_cf_removeartifact2.png" alt="Marked through crosses." border="0">
+<img src="images/manual/5_cf_removeartifact3.png" alt="Removed heart beat and its consequences." border="0">
+</pre>
+</p>
+
+
+<h2><a id="filtering" href="#filtering" aria-hidden="true"></a>
+Filtering</h2>
+<p><i>This section is about the automatic filtering of artifacts and will be described more concrete and understandable soon. Please be patient.</i></p>
+
+<p>
+There are basically two rules to filter artifacts from a series of RR intervals.
+<ol>
+<li><b>The first rule relates to missing R peaks in the time series.</b><br>
+<p>
+Consider a fixed limit of 50% (+50%; -50%) unless there is higher value defined in the edit field.
+If the difference of consecutive relative RR intervals exceeds this limit, a missing peak is detected the involved RR interval will be replaced with "NaN".
+</p>
+</li>
+<li><b>The second rule applies in cases for which R peaks are misplaced.</b><br>
+<p>
+The second rule applies when two consecutive relative RR intervals are too contrary to each other.
+This means that the change of heart rates takes place too promptly (physiologically not to explain).
+The limit is determined in the edit field <img src="images/manual/1_filter.png" alt="Filter settings" border="0">.
+</p>
+</li>
+</ol>
+</p>
+
+
+<br>
+<p>This manual was created with Ali Mourad.</p>
+        </section>
+
+        <aside id="sidebar">
+
+<!--           <a href="https://github.com/MarcusVollmer/HRV/" class="button_windows">
+            <small>Installation</small>
+            Windows <small>32/64 Bit</small>
+          </a>
+          <a href="https://github.com/MarcusVollmer/HRV/tarball/master" class="button_mac">
+            <small>Installation</small>
+            MacOSX
+          </a>
+          <a href="https://github.com/MarcusVollmer/HRV/zipball/master" class="button_linux">
+            <small>Installation</small>
+            Linux
+          </a> -->
+
+          <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" class="button_matlab">
+            <small>Installation</small>
+            Matlab App
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/MarcusVollmer/HRV"></a> is maintained by <a href="https://github.com/MarcusVollmer">MarcusVollmer</a>.</p>
+
+          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a> and Subtle Patterns by <a href="http://subtlepatterns.com/">Atle Mo</a>.</p>
+
+          <a href="https://github.com/MarcusVollmer/HRV/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/MarcusVollmer/HRV/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+        </aside>
+      </div>
+    </div>
+
+
+  </body>
+</html>
