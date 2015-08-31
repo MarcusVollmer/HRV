@@ -85,10 +85,11 @@ classdef HRV
 %      preprint: coming soon
 %
 %   
-%   Copyright 2015 Marcus Vollmer, marcus.vollmer@uni-greifswald.de
+%   MIT License (MIT) Copyright (c) 2015 Marcus Vollmer,
+%   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 29 May 2015
-%   version: 0.11
+%   last modified: 03 July 2015
+%   version: 0.12
 
     properties
     end
@@ -96,7 +97,7 @@ classdef HRV
     methods(Static)
 
 
-function hrv_sdsd = SDSD(RR,num,flag)
+function hrv_sdsd = SDSD(RR,num,flag,overlap)
 %SDSD Standard deviation of successive differences.
 %   hrv_sdsd = SDSD(RR,num) is the standard deviation of successive
 %   differences. RR is a vector containing RR intervals in seconds. num
@@ -106,6 +107,8 @@ function hrv_sdsd = SDSD(RR,num,flag)
 %   for which the sample size is smaller 5.
 %   If num equals 0, the global standard deviation will be computed.
 %   hrv_sdsd is then a number.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   hrv_sdsd = SDSD(RR,num,flag), where flag is 0 or 1 to specify
 %   normalization by n-1 or n. (default: 1)
@@ -118,22 +121,40 @@ function hrv_sdsd = SDSD(RR,num,flag)
     if nargin<3
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
+    if nargin<4
+        overlap = 1;
+    end
     
     dRR = diff(RR);
     if num==0
         hrv_sdsd = nanstd(dRR,flag,1);        
     else
-        ts = NaN(length(RR),num);
-        for j=1:num
-            ts(j+1:end,j) = dRR(1:end-j+1);
-        end    
-        samplesize = sum(~isnan(ts),2);
-        hrv_sdsd = nanstd(ts,flag,2); 
-        hrv_sdsd(samplesize<5) = NaN;
-    end
+        if ceil(num*(1-overlap))>1
+            j=1;
+            ts = NaN(length(ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(dRR)),num);
+            for i=ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(dRR)
+                ts(j,1:(1+i-max(1,(i-num+1)))) = dRR(max(1,(i-num+1)):i);
+                j=j+1;
+            end
+            samplesize = sum(~isnan(ts),2);
+            hrv_sdsd_tmp = nanstd(ts,flag,2); 
+            hrv_sdsd_tmp(samplesize<5) = NaN;
+            
+            hrv_sdsd = NaN(length(RR),1);  
+            hrv_sdsd(ceil(num*(1-overlap))+1:ceil(num*(1-overlap)):length(RR)) = hrv_sdsd_tmp;
+        else
+            ts = NaN(length(RR),num);            
+            for j=1:num
+                ts(j+1:end,j) = dRR(1:end-j+1);
+            end
+            samplesize = sum(~isnan(ts),2);
+            hrv_sdsd = nanstd(ts,flag,2); 
+            hrv_sdsd(samplesize<5) = NaN;
+        end
+    end    
 end
 
-function hrv_sdnn = SDNN(RR,num,flag)
+function hrv_sdnn = SDNN(RR,num,flag,overlap)
 %SDNN Standard deviation of NN intervals.
 %   hrv_sdnn = SDNN(RR,num) is the standard deviation of NN intervals.
 %   RR is a vector containing RR intervals in seconds.
@@ -142,6 +163,8 @@ function hrv_sdnn = SDNN(RR,num,flag)
 %   hrv_sdnn is a column vector with the same length as RR.
 %   If num equals 0, the global standard deviation will be computed.
 %   hrv_sdnn is then a number.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   hrv_sdnn = SDNN(RR,num,flag), where flag is 0 or 1 to specify
 %   normalization by n-1 or n. (default: 1)
@@ -154,19 +177,37 @@ function hrv_sdnn = SDNN(RR,num,flag)
     if nargin<3
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
+    if nargin<4
+        overlap = 1;
+    end
     
     if num==0
         hrv_sdnn = nanstd(RR,flag,1);
     else
-        ts = NaN(length(RR),num);
-        for j=1:num
-            ts(j:end,j) = RR(1:end-j+1);
+        if ceil(num*(1-overlap))>1
+            j=1;
+            ts = NaN(length(ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(RR)),num);
+            for i=ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(RR)
+                ts(j,1:(1+i-max(1,(i-num+1)))) = RR(max(1,(i-num+1)):i);
+                j=j+1;
+            end
+            samplesize = sum(~isnan(ts),2);
+            hrv_sdnn_tmp = nanstd(ts,flag,2); 
+            hrv_sdnn_tmp(samplesize<5) = NaN;
+            
+            hrv_sdnn = NaN(length(RR),1);  
+            hrv_sdnn(ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(RR)) = hrv_sdnn_tmp;              
+        else
+            ts = NaN(length(RR),num);
+            for j=1:num
+                ts(j:end,j) = RR(1:end-j+1);
+            end
+            hrv_sdnn = nanstd(ts,flag,2);
         end
-        hrv_sdnn = nanstd(ts,flag,2);
     end
 end
 
-function hrv_rmssd = RMSSD(RR,num,flag)  
+function hrv_rmssd = RMSSD(RR,num,flag,overlap)  
 %RMSSD Root Mean Square of Successive Differences.
 %   hrv_rmssd = RMSSD(RR,num) is the root mean square of successive
 %   differences.
@@ -177,6 +218,8 @@ function hrv_rmssd = RMSSD(RR,num,flag)
 %   NaN values at those positions for which the sample size is smaller 5.
 %   If num equals 0, the global measure will be computed.
 %   hrv_rmssd is then a number.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   hrv_rmssd = RMSSD(RR,num,flag), where flag is 0 or 1 to specify
 %   normalization by n-1 or n. (default: 1)
@@ -189,23 +232,41 @@ function hrv_rmssd = RMSSD(RR,num,flag)
     if nargin<3
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end 
+    if nargin<4
+        overlap = 1;
+    end
     
     dRR = diff(RR).^2;
     if num==0
         hrv_rmssd = sqrt(nansum(dRR)./(sum(~isnan(dRR))-1+flag));
     else
-        ts = NaN(length(RR),num);
-        for j=1:num
-            ts(j+1:end,j) = dRR(1:end-j+1);
-        end    
-        samplesize = sum(~isnan(ts),2);
-        hrv_rmssd = sqrt(nansum(ts,2)./(samplesize-1+flag));
+        if ceil(num*(1-overlap))>1
+            j=1;
+            ts = NaN(length(ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(dRR)),num);
+            for i=ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(dRR)
+                ts(j,1:(1+i-max(1,(i-num+1)))) = dRR(max(1,(i-num+1)):i);
+                j=j+1;
+            end 
+            samplesize = sum(~isnan(ts),2);
+            hrv_rmssd_tmp = sqrt(nansum(ts,2)./(samplesize-1+flag)); 
+            hrv_rmssd_tmp(samplesize<5) = NaN;
+            
+            hrv_rmssd = NaN(length(RR),1);  
+            hrv_rmssd(ceil(num*(1-overlap))+1:ceil(num*(1-overlap)):length(RR)) = hrv_rmssd_tmp;  
+        else
+            ts = NaN(length(RR),num);
+            for j=1:num
+                ts(j+1:end,j) = dRR(1:end-j+1);
+            end    
+            samplesize = sum(~isnan(ts),2);
+            hrv_rmssd = sqrt(nansum(ts,2)./(samplesize-1+flag));
 
-        hrv_rmssd(samplesize<5) = NaN;
+            hrv_rmssd(samplesize<5) = NaN;
+        end
     end
 end
 
-function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag) 
+function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap) 
 %pNNx Probability of intervals greater x ms or smaller -x ms.
 %   [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x) computes the number for which the
 %   successive RR differences exceed x milliseconds and its proportion.
@@ -218,6 +279,8 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag)
 %   NaN values at those positions for which the sample size is smaller 5.
 %   If num equals 0, the global measure will be computed.
 %   hrv_pNNx is then a number.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag), where flag is 0 or 1 to
 %   specify normalization by n-1 or n. (default: 1)
@@ -232,6 +295,9 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag)
     if nargin<4
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
+    if nargin<5
+        overlap = 1;
+    end
     
     NNx = double(abs(diff(RR))>x/1000);
     NNx(isnan(diff(RR)))=NaN;
@@ -239,20 +305,39 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag)
     if num==0
         hrv_NNx = nansum(NNx);
         hrv_pNNx = hrv_NNx./(sum(~isnan(NNx))-1+flag);
-    else    
-        ts = NaN(length(RR),num);
-        for j=1:num
-            ts(j+1:end,j) = NNx(1:end-j+1);
-        end    
-        samplesize = sum(~isnan(ts),2);
+    else 
+        if ceil(num*(1-overlap))>1
+            j=1;
+            ts = NaN(length(ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(NNx)),num);
+            for i=ceil(num*(1-overlap)):ceil(num*(1-overlap)):length(NNx)
+                ts(j,1:(1+i-max(1,(i-num+1)))) = NNx(max(1,(i-num+1)):i);
+                j=j+1;
+            end 
+            samplesize = sum(~isnan(ts),2);
+            
+            hrv_NNx_tmp = nansum(ts,2);
+            hrv_pNNx_tmp = hrv_NNx_tmp./(samplesize-1+flag);
+            hrv_pNNx_tmp(samplesize<5) = NaN;
+    
+            hrv_NNx = NaN(length(RR),1);  
+            hrv_NNx(ceil(num*(1-overlap))+1:ceil(num*(1-overlap)):length(NNx)+1) = hrv_NNx_tmp;        
+            hrv_pNNx = NaN(length(RR),1);  
+            hrv_pNNx(ceil(num*(1-overlap))+1:ceil(num*(1-overlap)):length(NNx)+1) = hrv_pNNx_tmp;  
+        else
+            ts = NaN(length(RR),num);
+            for j=1:num
+                ts(j+1:end,j) = NNx(1:end-j+1);
+            end    
+            samplesize = sum(~isnan(ts),2);
 
-        hrv_NNx = nansum(ts,2);
-        hrv_pNNx = hrv_NNx./(samplesize-1+flag);
-        hrv_pNNx(samplesize<5) = NaN;  
+            hrv_NNx = nansum(ts,2);
+            hrv_pNNx = hrv_NNx./(samplesize-1+flag);
+            hrv_pNNx(samplesize<5) = NaN;
+        end
     end
 end
 
-function hrv_pNN50 = pNN50(RR,num,flag)
+function hrv_pNN50 = pNN50(RR,num,flag,overlap)
 %pNN50 Probability of intervals greater 50 ms or smaller -50 ms.
 %   hrv_pNN50 = pNN50(RR,num) computes the proportion for which the
 %   successive RR differences exceed 50 milliseconds.
@@ -263,6 +348,8 @@ function hrv_pNN50 = pNN50(RR,num,flag)
 %   NaN values at those positions for which the sample size is smaller 5.
 %   If num equals 0, the global measure will be computed.
 %   hrv_pNN50 is then a number.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   [hrv_pNN50 = pNN50(RR,num,x,flag), where flag is 0 or 1 to
 %   specify normalization by n-1 or n. (default: 1)
@@ -273,11 +360,14 @@ function hrv_pNN50 = pNN50(RR,num,flag)
     
     if nargin<3
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
+    end  
+    if nargin<4
+        overlap = 1;
     end    
-    hrv_pNN50 = HRV.pNNx(RR,num,50,flag);
+    hrv_pNN50 = HRV.pNNx(RR,num,50,flag,overlap);
 end
 
-function [TRI,TINN] = triangular_val(RR,num,w) 
+function [TRI,TINN] = triangular_val(RR,num,w,overlap) 
 %triangular_val Triangular Index and TINN.
 %   [TRI,TINN] = triangular_val(RR,num) computes the triangular index (TRI)
 %   and TINN value. TRI is the reciprocal of the probability of the
@@ -291,6 +381,8 @@ function [TRI,TINN] = triangular_val(RR,num,w)
 %   TRI and TINN are column vectors with the same length as RR.
 %   If num equals 0, the global measure will be computed.
 %   Then, TRI and TINN are numbers.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   [TRI,TINN] = triangular_val(RR,num,w), where w is the histogram bin
 %   size. (default: w = 1/128)
@@ -305,6 +397,9 @@ function [TRI,TINN] = triangular_val(RR,num,w)
     if nargin<3
         w = 1/128; %recommended bin size
     end
+    if nargin<4
+        overlap = 1;
+    end  
     
     TI_N  = @(N,h) sum((interp1([N length(h)],[0 max(h)],N:length(h))-h(N:length(h))).^2)+sum(h(1:N-1).^2);
     TI_M  = @(M,h) sum((interp1([1 M],[max(h) 0],1:M)-h(1:M)).^2)+sum(h(M+1:end).^2);
@@ -340,7 +435,13 @@ function [TRI,TINN] = triangular_val(RR,num,w)
     else
         TRI = NaN(size(RR));
         TINN = NaN(size(RR));
-        for j=1:length(RR)
+        
+        if overlap==1
+            steps = 1; 
+        else
+            steps = ceil(num*(1-overlap));
+        end
+        for j=steps:steps:length(RR)
 
             h = histcounts(RR(max([1 j-num+1]):j),0:w:5);
             TRI(j) = sum(h)/max(h);
@@ -373,7 +474,7 @@ function [TRI,TINN] = triangular_val(RR,num,w)
     end
 end
 
-function tri = TRI(RR,num,w) 
+function tri = TRI(RR,num,w,overlap) 
 %TRI Triangular Index.
 %   tri = TRI(RR,num) computes the triangular index (TRI).
 %   TRI is the reciprocal of the probability of the
@@ -385,6 +486,8 @@ function tri = TRI(RR,num,w)
 %   TRI is a column vector with the same length as RR.
 %   If num equals 0, the global measure will be computed.
 %   Then, TRI is a numbers.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   tri = TRI(RR,num,w), where w is the histogram bin size.
 %   (default: w=1/128)
@@ -393,14 +496,17 @@ function tri = TRI(RR,num,w)
 %      then HRV.TRI(RR,6) is [1;2;3;2;2.5;3;3;3;3]
 %      and HRV.TRI(RR,0,1/64) is 3. 
 
+    if nargin<4
+        overlap = 1;
+    end 
     if nargin<3
         [tri,~] = HRV.triangular_val(RR,num);
     else
-        [tri,~] = HRV.triangular_val(RR,num,w);
+        [tri,~] = HRV.triangular_val(RR,num,w,overlap);
     end    
 end
 
-function tinn = TINN(RR,num,w) 
+function tinn = TINN(RR,num,w,overlap) 
 %TINN Triangular Interpolation of NN histogram.
 %   tinn = TINN(RR,num) computes the TINN value.
 %   TINN is the width of the trinangular function, which has the best fit
@@ -412,6 +518,8 @@ function tinn = TINN(RR,num,w)
 %   TINN is a column vectors with the same length as RR.
 %   If num equals 0, the global measure will be computed.
 %   Then, TINN is a number.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   tinn = TINN(RR,num,w), where w is the histogram bin size.
 %   (default: w=1/128)
@@ -420,11 +528,14 @@ function tinn = TINN(RR,num,w)
 %      then HRV.TINN(RR,6) is
 %      [.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156]
 %      and HRV.TINN(RR,0,1/64) is 0.0313. 
-   
+
+    if nargin<4
+        overlap = 1;
+    end    
     if nargin<3
         [~,tinn] = HRV.triangular_val(RR,num);
     else
-        [~,tinn] = HRV.triangular_val(RR,num,w);
+        [~,tinn] = HRV.triangular_val(RR,num,w,overlap);
     end 
 end
 
@@ -498,7 +609,7 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF,f,Y,NFFT] = fft_val_fun(RR,Fs,type)
     end
 end
 
-function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type) 
+function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type,overlap) 
 %fft_val Spectral analysis.
 %   [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type) uses FFT to
 %   compute the spectral density function of the interpolated RR tachogram.
@@ -509,6 +620,8 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type)
 %   Fs specifies the sampling frequency.
 %   type is the interpolation type. Look up interp1 function of Matlab for
 %   accepted types (default: 'spline').
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   Example: If RR = repmat([1 .98 .9],1,20),
 %      then [~,~,LFHFratio] = HRV.fft_val(RR,60,1000) results in
@@ -520,6 +633,9 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type)
     if nargin<4
         type = 'spline';
     end
+    if nargin<5
+        overlap = 1;
+    end
     
     if num==0
         [pLF,pHF,LFHFratio,VLF,LF,HF,~,~,~] = HRV.fft_val_fun(RR,Fs,type);    
@@ -530,14 +646,20 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type)
         LF = NaN(size(RR));
         HF = NaN(size(RR));
         LFHFratio = NaN(size(RR));
-        for j=1:length(RR)
+        
+        if overlap==1
+            steps = 1; 
+        else
+            steps = ceil(num*(1-overlap));
+        end
+        for j=steps:steps:length(RR)
             [pLF(j),pHF(j),LFHFratio(j),VLF(j),LF(j),HF(j),~,~,~] = ...
                 HRV.fft_val_fun(RR(max([1 j-num+1]):j),Fs,type);
         end
     end
 end
 
-function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag)
+function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
 %returnmap_val Results of the Poincare plot.
 %   [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num) computes standard
 %   deviations along the identity line and its perpendicular axis of the
@@ -549,6 +671,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag)
 %   If num equals 0, the global standard deviations will be computed.
 %   SD1, SD2 and SD1SD2ratio are then numbers. Otherwise vectors of the
 %   same length as RR.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag), where flag is 0 or
 %   1 to specify normalization by n-1 or n. (default: 1)
@@ -561,6 +685,9 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag)
     if nargin<3
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
+    if nargin<4
+        overlap = 1;
+    end
     
     X = [RR(1:end-1) RR(2:end)]';
     alpha = -45*pi/180;
@@ -571,14 +698,33 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag)
         SD2 = nanstd(XR(1,:),flag,2);
         SD1 = nanstd(XR(2,:),flag,2);          
     else
-        ts1 = NaN(length(RR),num);
-        ts2 = NaN(length(RR),num);    
-        for j=1:num
-            ts1(j+1:end,j) = XR(1,1:end-j+1);
-            ts2(j+1:end,j) = XR(2,1:end-j+1);        
+        steps = ceil(num*(1-overlap));
+        if steps>1
+            j=1;
+            ts1 = NaN(length(steps:steps:length(RR)-1),num);
+            ts2 = ts1;            
+            for i=steps:steps:length(RR)-1
+                ts1(j,1:i-max(1,i-num+1)+1) = XR(1,max(1,i-num+1):i);
+                ts2(j,1:i-max(1,i-num+1)+1) = XR(2,max(1,i-num+1):i);                
+                j=j+1;
+            end
+            SD2_tmp = nanstd(ts1,flag,2);
+            SD1_tmp = nanstd(ts2,flag,2); 
+            
+            SD2 = NaN(length(RR),1);
+            SD1 = NaN(length(RR),1);
+            SD2(steps+1:steps:length(RR)) = SD2_tmp;
+            SD1(steps+1:steps:length(RR)) = SD1_tmp;
+        else
+            ts1 = NaN(length(RR),num);
+            ts2 = NaN(length(RR),num);    
+            for j=1:num
+                ts1(j+1:end,j) = XR(1,1:end-j+1);
+                ts2(j+1:end,j) = XR(2,1:end-j+1);        
+            end
+            SD2 = nanstd(ts1,flag,2);
+            SD1 = nanstd(ts2,flag,2);
         end
-        SD2 = nanstd(ts1,flag,2);
-        SD1 = nanstd(ts2,flag,2);    
     end
     SD1SD2ratio = SD1./SD2;
 end
@@ -597,6 +743,7 @@ function hr = HR(RR,num)
 %      63.1579;62.6866;63.6364;62.6866;63.6364].
     
     RR = RR(:);
+    
     if num==0
         hr = 60*sum(double(~isnan(RR)))./nansum(RR); 
     else
@@ -632,7 +779,7 @@ function rr = rrx(RR,grade)
         (RR((1+grade):end)+RR(1:(end-grade)))];
 end
 
-function [med,qr,shift] = rrHRV(RR,num,type)
+function [med,qr,shift] = rrHRV(RR,num,type,overlap)
 %rrHRV HRV based on relative RR intervals.
 %   [med,qr,shift] = rrHRV(RR,num) computes the euclidean distance to the
 %   center point of the return map of relative RR intervals of grade 1.
@@ -644,6 +791,8 @@ function [med,qr,shift] = rrHRV(RR,num,type)
 %   distance. 
 %   shift is a matrix with the coordinates of the center point.
 %   If num equals 0, the global measures will be computed.
+%   For faster computation on local measures you can specify an overlap.
+%   This is a value between 0 and 1. (default: 1)
 %
 %   [med,qr,shift] = rrHRV(RR,num,type), to specify the type of distance
 %   measure (experimental usage). (default: 'central')
@@ -663,6 +812,9 @@ function [med,qr,shift] = rrHRV(RR,num,type)
     if nargin<3
         type = 'central';
     end
+    if nargin<4
+        overlap = 1;
+    end
 
     rr_pct = round(HRV.rrx(RR,1)*1000)/10;
     valid = abs(rr_pct)<20;
@@ -670,11 +822,17 @@ function [med,qr,shift] = rrHRV(RR,num,type)
     
     rr_med  = @(rr,z) nanmedian(sqrt(sum([rr(1:end-1)-z(1) rr(2:end)-z(2)].^2,2)));
     rr_iqr  = @(rr,z) iqr(sqrt(sum([rr(1:end-1)-z(1) rr(2:end)-z(2)].^2,2)));
-       
+   
     if num>0
         med = NaN(size(rr_pct));
         qr = NaN(size(rr_pct));
         shift = NaN(length(rr_pct),2);        
+    end
+    
+    if overlap==1
+        steps = 1; 
+    else
+        steps = ceil(num*(1-overlap));
     end
     
     switch type
@@ -686,7 +844,7 @@ function [med,qr,shift] = rrHRV(RR,num,type)
                 med = rr_med(rr_pct,z);
                 qr = rr_iqr(rr_pct,z); 
             else
-                for i=3:length(rr_pct)
+                for i=max(3,steps):steps:length(rr_pct)
                     rr_pct_part = rr_pct(max(i-num+1,1):i);
                     valid_part = valid(max(i-num+1,1):(i-1));
                     if sum(valid_part)>4
@@ -695,7 +853,7 @@ function [med,qr,shift] = rrHRV(RR,num,type)
                         med(i) = rr_med(rr_pct_part,z);
                         qr(i) = rr_iqr(rr_pct_part,z);
                     end
-                end             
+                end 
             end  
             
         case 'central_shiftfilter'
@@ -715,7 +873,7 @@ function [med,qr,shift] = rrHRV(RR,num,type)
                     end
                 end
                 shift = filter(ones(9,1)/9,1,shift);
-                for i=3:length(rr_pct)
+                for i=max(3,steps):steps:length(rr_pct)
                     rr_pct_part = rr_pct(max(i-num+1,1):i);
                     med(i) = rr_med(rr_pct_part,shift(i,:));
                     qr(i) = rr_iqr(rr_pct_part,shift(i,:)); 
