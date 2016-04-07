@@ -13,6 +13,9 @@ classdef HRV
 %       triangular_val - Compute Triangular Index and TINN
 %       TRI - Compute Triangular index from the interval histogram
 %       TINN - Compute TINN, performing Triangular Interpolation
+%       DFA - Perform Detrended Fluctuation Analysis
+%       CD - Compute the Correlation Dimension
+%       ApEn - Approximate Entropy
 %       fft_val_fun - Spectral analysis of sequence (LF,HF,ratio)
 %       fft_val - Continuous spectral analysis (LF,HF,ratio)
 %       returnmap_val - Results of the Poincare plot (SD1,SD2,ratio)
@@ -21,6 +24,7 @@ classdef HRV
 %       rrHRV - Compute HRV based on relative RR intervals
 %       myquantile - Compute quantiles of each row of a matrix 
 %       RRfilter - Remove artifacts from RR sequences using rrx
+%       pattern - Recognition of patterns and regularities in data
 %
 %
 %   Example:  HRV analysis of a sythetic RR sequence having an average
@@ -79,17 +83,17 @@ classdef HRV
 %
 %
 %   References:
-%      [1] Vollmer, M. (2015) A robust, simple and reliable measure of
-%      Heart Rate Variability using relative RR intervals,
-%      submitted to Computing in Cardiology,
-%      preprint: coming soon
+%      [1] Vollmer, M. (2015) A Robust, Simple and Reliable Measure of
+%      Heart Rate Variability using Relative RR Intervals,
+%      Computing in Cardiology 2015; 42:609-612.
+%      preprint: http://www.cinc.org/archives/2015/pdf/0609.pdf
 %
 %   
 %   MIT License (MIT) Copyright (c) 2015 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 03 July 2015
-%   version: 0.12
+%   last modified: 11 March 2016
+%   version: 0.16
 
     properties
     end
@@ -118,10 +122,10 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
 %      and HRV.SDSD(RR,0,1) is 0.0994 and HRV.SDSD(RR,0,0) is 0.1054.
 
     RR = RR(:);
-    if nargin<3
+    if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end
     
@@ -174,10 +178,13 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
 %      and HRV.SDNN(RR,0,1) is 0.0500 and HRV.SDNN(RR,0,0) is 0.0527.
 
     RR = RR(:);
-    if nargin<3
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
+    if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end
     
@@ -229,10 +236,10 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
 %      and HRV.RMSSD(RR,0,1) is 0.1000 and HRV.RMSSD(RR,0,0) is 0.1061.
 
     RR = RR(:);
-    if nargin<3
+    if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end 
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end
     
@@ -292,10 +299,10 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
 %      and hrv_NNx = 8. 
 
     RR = RR(:);
-    if nargin<4
+    if nargin<4 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
-    if nargin<5
+    if nargin<5 || isempty(overlap)
         overlap = 1;
     end
     
@@ -358,10 +365,10 @@ function hrv_pNN50 = pNN50(RR,num,flag,overlap)
 %      then HRV.pNN50(RR,6) is [NaN;NaN;NaN;NaN;NaN;0.6;.6667;.6667;.6667]
 %      and HRV.pNN50(RR,6,0) is [NaN;NaN;NaN;NaN;NaN;0.75;.8;.8;.8]. 
     
-    if nargin<3
+    if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end  
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end    
     hrv_pNN50 = HRV.pNNx(RR,num,50,flag,overlap);
@@ -394,10 +401,10 @@ function [TRI,TINN] = triangular_val(RR,num,w,overlap)
 %      and HRV.triangular_val(RR,0,1/64) is 3. 
   
     RR = RR(:);
-    if nargin<3
+    if nargin<3 || isempty(w)
         w = 1/128; %recommended bin size
     end
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end  
     
@@ -496,7 +503,7 @@ function tri = TRI(RR,num,w,overlap)
 %      then HRV.TRI(RR,6) is [1;2;3;2;2.5;3;3;3;3]
 %      and HRV.TRI(RR,0,1/64) is 3. 
 
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end 
     if nargin<3
@@ -529,7 +536,7 @@ function tinn = TINN(RR,num,w,overlap)
 %      [.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156]
 %      and HRV.TINN(RR,0,1/64) is 0.0313. 
 
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end    
     if nargin<3
@@ -538,6 +545,194 @@ function tinn = TINN(RR,num,w,overlap)
         [~,tinn] = HRV.triangular_val(RR,num,w,overlap);
     end 
 end
+
+function alpha = DFA(RR,boxsize_short,boxsize_long,grade,~) 
+%DFA Detrended Fluctuation Analysis of NN histogram.
+%    Example: 
+%       Ann = rdann('mitdb/100','atr');
+%       alpha = HRV.DFA(diff(Ann)) 
+%       alpha = HRV.DFA(diff(Ann),5:13,14:200) 
+%       alpha = HRV.DFA(RR(2:100),5:16,16:32,2,1)
+%       RR = diff(Ann);
+% for i=1:100:500
+% alpha = HRV.DFA(RR(i:end))
+% end
+
+
+    if nargin<5
+        graph = false;
+    else
+        graph = true;        
+    end
+    if nargin<4 || isempty(grade)
+        grade = 1;
+    end     
+    if nargin<3 || isempty(boxsize_long)
+        boxsize_long = 16:64;
+    end 
+    if nargin<2 || isempty(boxsize_short)
+        boxsize_short = 4:16;
+    end    
+    boxsize = [boxsize_short boxsize_long];
+    
+    
+    y = cumsum(RR-nanmean(RR));
+
+    trend = zeros(size(RR,1),length(boxsize));
+    F = NaN(length(boxsize),1);
+    for bs=1:size(trend,2)
+        bs_tmp = boxsize(bs);
+        for i=0:floor((size(RR,1)-2)/bs_tmp)
+            if i==floor((size(RR,1)-2)/bs_tmp)
+                x = i*bs_tmp+1:size(RR,1);
+            else
+                x = i*bs_tmp+1:(i+1)*bs_tmp;
+            end
+            [p,~,mu] = polyfit(x',y(x),grade);
+            trend(x,bs) = polyval(p,(x - mu(1))/mu(2));
+        end    
+        F(bs) = sqrt(sum((y-trend(:,bs)).^2)/size(RR,1));
+    end
+   
+    [p1,~,mu1] = polyfit(log(boxsize_short),log(F(1:length(boxsize_short)))',1);
+    [p2,~,mu2] = polyfit(log(boxsize_long),log(F(length(boxsize_short)+1:end))',1);
+    alpha = [p1(1)/mu1(2) p2(1)/mu2(2)];
+
+    if graph
+        figure
+        ax(1) = subplot(3,2,1);
+            plot(1:size(RR,1),RR-nanmean(RR)); axis tight; hold on;
+            plot([0 size(RR,1)],[0 0],'k','linewidth',2)
+        ax(2) = subplot(3,2,3);     
+            plot(1:size(RR,1),y); hold on;
+            plot(1:size(RR,1),trend(:,end)); axis tight;
+            set(gca,'XTick',boxsize(end):boxsize(end):size(RR,1)); grid on
+        ax(3) = subplot(3,2,5);   
+            plot(1:size(RR,1),(y-trend(:,end)).^2); axis tight;
+            set(gca,'XTick',boxsize(end):boxsize(end):size(RR,1)); grid on
+        linkaxes(ax,'x');
+
+        subplot(3,2,[2 4 6]);
+            loglog(boxsize,F,'or'); axis tight; grid on; hold on;     
+            plot(boxsize_short,exp(polyval(p1,(log(boxsize_short) - mu1(1))/mu1(2))),'k','linewidth',2)
+            plot(boxsize_long,exp(polyval(p2,(log(boxsize_long) - mu2(1))/mu2(2))),'k','linewidth',2)
+    end
+end
+
+function cdim = CD(RR,m,r,~) 
+%CD Correlation Dimension.
+%    Example: 
+%       Ann = rdann('mitdb/100','atr');
+%       Fs = 250;
+%       cdim = HRV.CD(diff(Ann),10,[1:20])
+%       cdim = HRV.CD(diff(Ann)/Fs,10,[1:20]/Fs) 
+%       cdim = HRV.CD(diff(Ann),10,1:100) 
+%       RR = diff(Ann);
+    if nargin<4
+        graph = false;
+    else
+        graph = true;        
+    end
+    if nargin<3
+        r = [50:100]/1000;
+    end    
+    if nargin<2
+        m = 10;
+    end 
+    
+    d = NaN(length(RR),2*length(RR));
+    for i=1:length(RR)
+        d(i,length(RR)+1-i:2*length(RR)-i) = (RR(i)-RR).^2;
+    end 
+    d = d(:,1:length(RR)-1);
+    D = reshape(filter(ones(m,1),1,d(:)),length(RR),length(RR)-1);
+
+    %correlation integral
+    C = zeros(size(r));
+    for i=1:length(r)
+        C(i) = 2*sum(sum(D<=r(i)^2))/...
+            ((length(RR)-m+1)*(length(RR)-m));
+    end
+    [p1,~,mu1] = polyfit(log10(r(C>0)),log10(C(C>0)),1);
+    cdim = p1(1);
+    
+    if graph
+        figure
+        scatter(log10(r),log10(C)); axis tight;
+        grid on; hold on;     
+        plot(log10(r(C>0)),polyval(p1,(log10(r(C>0)) - mu1(1))/mu1(2)),'k','linewidth',2)
+    end
+end
+
+function apen = ApEn(RR,num,m,r) 
+%ApEn Approximate Entropy.
+%   num specifies the number of successive values for which the local
+%   measure will be retrospectively computed.
+%    Example: 
+%       Ann = rdann('mitdb/100','atr');
+%       apen = HRV.ApEn(diff(Ann))
+%       Ann = rdann('nsr2db/nsr001','ecg');
+%       apen = HRV.ApEn(diff(Ann(1:1000)))
+    if nargin<4 || isempty(r)
+        r = .2*HRV.SDNN(RR);
+    end    
+    if nargin<3 || isempty(m)
+        m = 2;
+    end  
+    if nargin<2 || isempty(num)
+        num = 0;
+    end 
+    
+    d = NaN(m+1,2*length(RR));  
+    Cm = zeros(length(RR)-m+1,1);
+    Cm1 = zeros(length(RR)-m,1);
+    for i=1:m
+        d(i,length(RR)+1-i:2*length(RR)-i) = abs(RR(i)-RR);
+    end
+    for i=m+1:length(RR)
+        d(mod(i-1,m+1)+1,:) = NaN;
+        d(mod(i-1,m+1)+1,length(RR)+1-i:2*length(RR)-i) = abs(RR(i)-RR);
+        Dm = max(d(mod([i-m:i-1]-1,m+1)+1,:),[],'includenan');
+        Dm1 = max(d,[],'includenan');
+        Cm(i-m) = sum(Dm<=r,2);
+        Cm1(i-m) = sum(Dm1<=r,2);  
+    end
+    i=i+1;
+    Dm = max(d(mod([i-m:i-1]-1,m+1)+1,:),[],'includenan');
+    Cm(i-m) = sum(Dm<=r,2);
+    
+    %correlation integral
+    Cm  = Cm./(length(RR)-m+1);
+    Cm1 = Cm1./(length(RR)-m);
+     
+% More clear procedure, but requires to much memory:
+% tic   
+%     d = NaN(length(RR),2*length(RR));
+%     for i=1:length(RR)
+%         d(i,length(RR)+1-i:2*length(RR)-i) = abs(RR(i)-RR);
+%     end 
+%     
+%     Dm  = NaN(length(RR)-m+1,2*length(RR));
+%     Dm1 = NaN(length(RR)-m,2*length(RR));
+%     for i=1:length(RR)-m
+%         Dm(i,:)  = max(d(i:i+m-1,:),[],'includenan');
+%         Dm1(i,:) = max(d(i:i+m,:),[],'includenan');        
+%     end
+%     Dm(i+1,:) = max(d(i+1:i+m,:),[],'includenan');
+%     
+%     %correlation integral
+%     Cm  = (sum(Dm <=r,2))./(length(RR)-m+1);
+%     Cm1 = (sum(Dm1<=r,2))./(length(RR)-m);    
+% toc
+
+    if num==0
+        apen = mean(log(Cm))/mean(log(Cm1));
+    else
+        apen = filter(ones(num,1)/num,1,[NaN(m-1,1); log(Cm)])./...
+            filter(ones(num,1)/num,1,[NaN(m,1); log(Cm1)]);
+    end
+end
+
 
 function [pLF,pHF,LFHFratio,VLF,LF,HF,f,Y,NFFT] = fft_val_fun(RR,Fs,type)
 %fft_val_fun Spectral analysis of a sequence.
@@ -630,10 +825,10 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type,overlap)
 %   See also INTERP1, FFT.
     
     RR = RR(:);
-    if nargin<4
+    if nargin<4 || isempty(type)
         type = 'spline';
     end
-    if nargin<5
+    if nargin<5 || isempty(overlap)
         overlap = 1;
     end
     
@@ -682,10 +877,10 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
 %      SD1SD2ratio = [NaN;NaN;0.6;1.7321;1.4354;1.4195;1.732;1.732;1.732].
 
     RR = RR(:);
-    if nargin<3
+    if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end
     
@@ -779,7 +974,7 @@ function rr = rrx(RR,grade)
         (RR((1+grade):end)+RR(1:(end-grade)))];
 end
 
-function [med,qr,shift] = rrHRV(RR,num,type,overlap)
+function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
 %rrHRV HRV based on relative RR intervals.
 %   [med,qr,shift] = rrHRV(RR,num) computes the euclidean distance to the
 %   center point of the return map of relative RR intervals of grade 1.
@@ -809,19 +1004,25 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap)
 %      results in med = 10.8142 and qr = 5.9494 and 
 %      shift = [-0.2857 -1.2143].
 
-    if nargin<3
+    if nargin<3 || isempty(type)
         type = 'central';
     end
-    if nargin<4
+    if nargin<4 || isempty(overlap)
         overlap = 1;
     end
+    if nargin<5 || isempty(grade)
+        grade = 1;
+    end
+    if nargin<6 || isempty(tolerance)
+        tolerance = 20;
+    end    
 
-    rr_pct = round(HRV.rrx(RR,1)*1000)/10;
-    valid = abs(rr_pct)<20;
+    rr_pct = HRV.rrx(RR,grade)*100;
+    valid = abs(rr_pct)<tolerance;
     valid = valid(1:end-1)&valid(2:end);
     
-    rr_med  = @(rr,z) nanmedian(sqrt(sum([rr(1:end-1)-z(1) rr(2:end)-z(2)].^2,2)));
-    rr_iqr  = @(rr,z) iqr(sqrt(sum([rr(1:end-1)-z(1) rr(2:end)-z(2)].^2,2)));
+    rr_med  = @(rr,z,valid) nanmedian(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
+    rr_iqr  = @(rr,z,valid) iqr(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
    
     if num>0
         med = NaN(size(rr_pct));
@@ -841,8 +1042,8 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap)
             if num==0
                 z = [mean(rr_pct([valid; false])) mean(rr_pct([false; valid]))];
                 shift = z;
-                med = rr_med(rr_pct,z);
-                qr = rr_iqr(rr_pct,z); 
+                med = rr_med(rr_pct,z,valid);
+                qr = rr_iqr(rr_pct,z,valid); 
             else
                 for i=max(3,steps):steps:length(rr_pct)
                     rr_pct_part = rr_pct(max(i-num+1,1):i);
@@ -850,8 +1051,8 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap)
                     if sum(valid_part)>4
                         z = [mean(rr_pct_part([valid_part; false])) mean(rr_pct_part([false; valid_part]))];
                         shift(i,:) = z;
-                        med(i) = rr_med(rr_pct_part,z);
-                        qr(i) = rr_iqr(rr_pct_part,z);
+                        med(i) = rr_med(rr_pct_part,z,valid_part);
+                        qr(i) = rr_iqr(rr_pct_part,z,valid_part);
                     end
                 end 
             end  
@@ -861,8 +1062,8 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap)
             if num==0
                 z = [mean(rr_pct([valid; false])) mean(rr_pct([false; valid]))];
                 shift = z;
-                med = rr_med(rr_pct,z);
-                qr = rr_iqr(rr_pct,z); 
+                med = rr_med(rr_pct,z,valid);
+                qr = rr_iqr(rr_pct,z,valid); 
             else
                 for i=3:length(rr_pct)
                     rr_pct_part = rr_pct(max(i-num+1,1):i);
@@ -875,8 +1076,9 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap)
                 shift = filter(ones(9,1)/9,1,shift);
                 for i=max(3,steps):steps:length(rr_pct)
                     rr_pct_part = rr_pct(max(i-num+1,1):i);
-                    med(i) = rr_med(rr_pct_part,shift(i,:));
-                    qr(i) = rr_iqr(rr_pct_part,shift(i,:)); 
+                    valid_part = valid(max(i-num+1,1):(i-1));
+                    med(i) = rr_med(rr_pct_part,shift(i,:),valid_part);
+                    qr(i) = rr_iqr(rr_pct_part,shift(i,:),valid_part); 
                 end             
             end
             
@@ -986,6 +1188,47 @@ function RR = RRfilter(RR,limit)
     postmp = find(abs(rr_pct)>max([limit 50]));
     RR(postmp-1) = NaN; RR(postmp) = NaN; %unreasonble rr_pct values
 
+end
+
+
+function p = pattern(RR,grades,num)
+%pattern Recognition of patterns and regularities in data.
+
+    hrv_grade = struct; j=1;
+    p = zeros(10,length(grades));
+    for i=grades
+        hrv_grade.(['grade' num2str(i)])= HRV.rrHRV(RR,num,[],[],i);          
+        for k=1:10
+            p(k,j) = sum(hrv_grade.grade1./hrv_grade.(['grade' num2str(i)])>(1+k/10))/size(hrv_grade.grade1,1);
+        end
+        j=j+1;
+    end
+    
+    figure
+    for i=grades
+        plot(1:length(RR),hrv_grade.grade1./hrv_grade.(['grade' num2str(i)]))
+        hold on
+    end
+    legend(num2str(grades(:)))
+end
+
+function rrx_view(RR,grades,xl)
+
+    rr = struct;
+    figure
+    j=1;
+    n1 = ceil(sqrt(length(grades)));
+    n2 = ceil(length(grades)/n1);
+    for i=grades
+        rr.(['grade' num2str(i)]) = HRV.rrx(RR,i);
+        subplot(n2,n1,j)
+        plot(rr.(['grade' num2str(i)])(xl),rr.(['grade' num2str(i)])(xl+1),'o-k')
+        xlim([-.15 .15])
+        ylim([-.15 .15])
+        grid on
+        title(['grade' num2str(i)])
+        j=j+1;
+    end
 end
 
 
