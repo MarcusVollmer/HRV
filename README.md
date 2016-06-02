@@ -1,4 +1,4 @@
-# HRVTool v0.94
+# HRVTool v0.95
 ## Methods for analyzing Heart Rate Variability
 
 The present functions are made for Matlab R2015a. Errors may occur using older releases (at least R2014b required).
@@ -7,7 +7,7 @@ The present functions are made for Matlab R2015a. Errors may occur using older r
 **HRVTool.zip** is a an archive which contains all files to run the GUI (Graphical User Interface) on Matlab.
 
 Please run HRVTool.m to start the GUI.
-The user interface has been tested on Windows 7 64bit and Mac OS 10.9.
+The user interface has been tested on Windows 7 64bit, Linux Ubuntu 14.04 and Mac OS 10.9.
 
 ### Supported files
 - [x] Polar hrm files
@@ -19,6 +19,6 @@ Other formats are possible to load. Please write an email to marcus.vollmer@uni-
 
 
 This work and all supported files and functions are licensed under the terms of the MIT License (MIT)
-Copyright (c) 2015 Marcus Vollmer
+Copyright (c) 2015-2016 Marcus Vollmer
 
-31 August 2015
+01 June 2016
