@@ -1021,7 +1021,7 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
     valid = abs(rr_pct)<tolerance;
     valid = valid(1:end-1)&valid(2:end);
     
-    rr_med  = @(rr,z,valid) nanmedian(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
+    rr_med  = @(rr,z,valid) HRV.nanmedian(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
     rr_iqr  = @(rr,z,valid) iqr(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
    
     if num>0
@@ -1307,6 +1307,32 @@ function z = zscore(x, opt, varargin)
     
     % computer z scores
     z = (x - repmat(m, size(x)./size(m)))./repmat(s, size(x)./size(s));
+end
+
+function m = nanmedian (x, varargin)
+
+    % check input
+    if nargin < 2
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{:};
+    end
+
+    % determine number of regular (not nan) data points
+    n = sum(not(isnan(x)), dim);
+
+    % sort data (nans move to the end)
+    x = sort(x, dim);
+
+    % calculate median of regular data points only    
+    m = zeros(size(n));  
+    sx = size(x);
+    step = prod(sx(1:dim-1)); %linear indexing step between consecutive points along dimension
+    start = reshape((0:(prod(sx)/sx(dim)-1)), size(n));
+    start = floor(start / prod(sx(1:dim-1))) * prod(sx(1:dim)) + ...
+               mod(start, prod(sx(1:dim-1))); %first point along dimension
+    m = x(start + step*ceil(n./2-0.5)+1) + x(start + step*floor(n./2-0.5)+1)/2;
 end
     
     end
