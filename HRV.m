@@ -788,7 +788,7 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF,f,Y,NFFT] = fft_val_fun(RR,Fs,type)
         NFFT = NaN;
     else
         NFFT = 2^nextpow2(L);
-        Y = fft(zscore(RR_rsmp),NFFT)/L;
+        Y = fft(HRV.zscore(RR_rsmp),NFFT)/L;
         f = Fs/2*linspace(0,1,NFFT/2+1);  
 
         YY = 2*abs(Y(1:NFFT/2+1));
@@ -1287,6 +1287,28 @@ function m = nanmean(x, varargin)
     m = sum(x, dim)./n;
 end
 
+function z = zscore(x, opt, varargin)
+
+    % check input
+    if (nargin < 3)
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{1};
+    end
+    
+    if (nargin < 2) || isempty(opt)
+      opt = 0;
+    end
+    
+    % compute mean value(s) and standard deviation(s)
+    m = mean(x, dim);
+    s = std(x, opt, dim);
+    
+    % computer z scores
+    z = (x - repmat(m, size(x)./size(m)))./repmat(s, size(x)./size(s));
+end
+    
     end
     
 end
