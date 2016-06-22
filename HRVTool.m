@@ -2264,7 +2264,7 @@ function poincare
     plot(RRorg(my_artifacts(my_artifacts>0 & my_artifacts<size(RRorg,1)-1)),...
         RRorg(my_artifacts(my_artifacts>0 & my_artifacts<size(RRorg,1)-1)+1),...
         'xk','Parent',F.ha6);
-    p = calculateEllipse(nanmean(x1),nanmean(x2),2*SD1,2*SD2,45);
+    p = calculateEllipse(HRV.nanmean(x1),HRV.nanmean(x2),2*SD1,2*SD2,45);
     plot(F.ha6,p(:,1), p(:,2),'k','linewidth',1.5)
     hold(F.ha6,'off')
   
@@ -2488,7 +2488,7 @@ end
 
 function update_table_global
     [HRV_global_rrHRV_median,HRV_global_rrHRV_iqr,HRV_global_rrHRV_shift] = HRV.rrHRV(RR,0);
-    HRV_global_meanrr = nanmean(RR);
+    HRV_global_meanrr = HRV.nanmean(RR);
     HRV_global_sdnn = HRV.SDNN(RR,0);
     HRV_global_rmssd = HRV.RMSSD(RR,0);
     HRV_global_pnn50 = HRV.pNN50(RR,0);        
@@ -2513,7 +2513,7 @@ end
 
 function update_table_local
     [HRV_local_rrHRV_median,HRV_local_rrHRV_iqr,HRV_local_rrHRV_shift] = HRV.rrHRV(RR_loc,0);
-    HRV_local_meanrr = nanmean(RR_loc);
+    HRV_local_meanrr = HRV.nanmean(RR_loc);
     HRV_local_sdnn = HRV.SDNN(RR_loc,0);
     HRV_local_rmssd = HRV.RMSSD(RR_loc,0);
     HRV_local_pnn50 = HRV.pNN50(RR_loc,0);        
@@ -2542,7 +2542,7 @@ end
 function update_table_footprint  
     if showFootprint
         [HRV_footprint_rrHRV_median,HRV_footprint_rrHRV_iqr,HRV_footprint_rrHRV_shift] = HRV.rrHRV(fp_RR,0);
-        HRV_footprint_meanrr = nanmean(fp_RR);
+        HRV_footprint_meanrr = HRV.nanmean(fp_RR);
         HRV_footprint_sdnn = HRV.SDNN(fp_RR,0);
         HRV_footprint_rmssd = HRV.RMSSD(fp_RR,0);
         HRV_footprint_pnn50 = HRV.pNN50(fp_RR,0);        

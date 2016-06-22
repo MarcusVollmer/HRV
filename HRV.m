@@ -131,7 +131,7 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
     
     dRR = diff(RR);
     if num==0
-        hrv_sdsd = nanstd(dRR,flag,1);        
+        hrv_sdsd = HRV.nanstd(dRR,flag,1);
     else
         if ceil(num*(1-overlap))>1
             j=1;
@@ -141,7 +141,7 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
                 j=j+1;
             end
             samplesize = sum(~isnan(ts),2);
-            hrv_sdsd_tmp = nanstd(ts,flag,2); 
+            hrv_sdsd_tmp = HRV.nanstd(ts,flag,2);
             hrv_sdsd_tmp(samplesize<5) = NaN;
             
             hrv_sdsd = NaN(length(RR),1);  
@@ -152,7 +152,7 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
                 ts(j+1:end,j) = dRR(1:end-j+1);
             end
             samplesize = sum(~isnan(ts),2);
-            hrv_sdsd = nanstd(ts,flag,2); 
+            hrv_sdsd = HRV.nanstd(ts,flag,2);
             hrv_sdsd(samplesize<5) = NaN;
         end
     end    
@@ -189,7 +189,7 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
     end
     
     if num==0
-        hrv_sdnn = nanstd(RR,flag,1);
+        hrv_sdnn = HRV.nanstd(RR,flag,1);
     else
         if ceil(num*(1-overlap))>1
             j=1;
@@ -199,7 +199,7 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
                 j=j+1;
             end
             samplesize = sum(~isnan(ts),2);
-            hrv_sdnn_tmp = nanstd(ts,flag,2); 
+            hrv_sdnn_tmp = HRV.nanstd(ts,flag,2);
             hrv_sdnn_tmp(samplesize<5) = NaN;
             
             hrv_sdnn = NaN(length(RR),1);  
@@ -209,7 +209,7 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
             for j=1:num
                 ts(j:end,j) = RR(1:end-j+1);
             end
-            hrv_sdnn = nanstd(ts,flag,2);
+            hrv_sdnn = HRV.nanstd(ts,flag,2);
         end
     end
 end
@@ -576,7 +576,7 @@ function alpha = DFA(RR,boxsize_short,boxsize_long,grade,~)
     boxsize = [boxsize_short boxsize_long];
     
     
-    y = cumsum(RR-nanmean(RR));
+    y = cumsum(RR-HRV.nanmean(RR));
 
     trend = zeros(size(RR,1),length(boxsize));
     F = NaN(length(boxsize),1);
@@ -601,7 +601,7 @@ function alpha = DFA(RR,boxsize_short,boxsize_long,grade,~)
     if graph
         figure
         ax(1) = subplot(3,2,1);
-            plot(1:size(RR,1),RR-nanmean(RR)); axis tight; hold on;
+            plot(1:size(RR,1),RR-HRV.nanmean(RR)); axis tight; hold on;
             plot([0 size(RR,1)],[0 0],'k','linewidth',2)
         ax(2) = subplot(3,2,3);     
             plot(1:size(RR,1),y); hold on;
@@ -890,8 +890,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
     XR = R*X;
     
     if num==0
-        SD2 = nanstd(XR(1,:),flag,2);
-        SD1 = nanstd(XR(2,:),flag,2);          
+        SD2 = HRV.nanstd(XR(1,:),flag,2);
+        SD1 = HRV.nanstd(XR(2,:),flag,2);
     else
         steps = ceil(num*(1-overlap));
         if steps>1
@@ -903,8 +903,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
                 ts2(j,1:i-max(1,i-num+1)+1) = XR(2,max(1,i-num+1):i);                
                 j=j+1;
             end
-            SD2_tmp = nanstd(ts1,flag,2);
-            SD1_tmp = nanstd(ts2,flag,2); 
+            SD2_tmp = HRV.nanstd(ts1,flag,2);
+            SD1_tmp = HRV.nanstd(ts2,flag,2);
             
             SD2 = NaN(length(RR),1);
             SD1 = NaN(length(RR),1);
@@ -917,8 +917,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
                 ts1(j+1:end,j) = XR(1,1:end-j+1);
                 ts2(j+1:end,j) = XR(2,1:end-j+1);        
             end
-            SD2 = nanstd(ts1,flag,2);
-            SD1 = nanstd(ts2,flag,2);
+            SD2 = HRV.nanstd(ts1,flag,2);
+            SD1 = HRV.nanstd(ts2,flag,2);
         end
     end
     SD1SD2ratio = SD1./SD2;
@@ -1231,6 +1231,61 @@ function rrx_view(RR,grades,xl)
     end
 end
 
+function s = nanstd(x, opt, varargin)
+    
+    % check input
+    if (nargin < 3)
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{1};
+    end
+    
+    if (nargin < 2) || isempty(opt)
+      opt = 0;
+    end
+
+    % determine number of regular (not nan) data points and nans
+    n = sum(not(isnan(x)), dim);
+    nnan = sum(isnan(x), dim);
+   
+    % replace nans with zeros, remove mean value(s) and compute squared sums
+    x(isnan(x)) = 0;
+    m = sum(x, dim)./n;
+    x = x - repmat(m, size(x)./size(m));
+    s = sum(x.^2, dim);
+    
+    % remove contributions of added zeros
+    s = s - (m.^2).*nnan;
+    
+    % normalization
+    if (opt == 0)
+      s = sqrt(s./max(n-1,1));
+    elseif (opt == 1)
+      s = sqrt(s./n);
+    else
+      error('HRV.nanstd: unkown normalization type');
+    end    
+end    
+
+function m = nanmean(x, varargin)
+    
+    % check input
+    if (nargin < 2)
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{1};
+    end
+    
+    % determine number of regular (not nan) data points
+    n = sum(not(isnan(x)), dim);
+        
+    % replace nans with zeros and compute mean value(s)
+    x(isnan(x)) = 0;
+    n(n==0) = nan;
+    m = sum(x, dim)./n;
+end
 
     end
     
