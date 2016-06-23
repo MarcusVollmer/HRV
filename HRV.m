@@ -245,7 +245,7 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
     
     dRR = diff(RR).^2;
     if num==0
-        hrv_rmssd = sqrt(nansum(dRR)./(sum(~isnan(dRR))-1+flag));
+        hrv_rmssd = sqrt(HRV.nansum(dRR)./(sum(~isnan(dRR))-1+flag));
     else
         if ceil(num*(1-overlap))>1
             j=1;
@@ -255,7 +255,7 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
                 j=j+1;
             end 
             samplesize = sum(~isnan(ts),2);
-            hrv_rmssd_tmp = sqrt(nansum(ts,2)./(samplesize-1+flag)); 
+            hrv_rmssd_tmp = sqrt(HRV.nansum(ts,2)./(samplesize-1+flag)); 
             hrv_rmssd_tmp(samplesize<5) = NaN;
             
             hrv_rmssd = NaN(length(RR),1);  
@@ -266,7 +266,7 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
                 ts(j+1:end,j) = dRR(1:end-j+1);
             end    
             samplesize = sum(~isnan(ts),2);
-            hrv_rmssd = sqrt(nansum(ts,2)./(samplesize-1+flag));
+            hrv_rmssd = sqrt(HRV.nansum(ts,2)./(samplesize-1+flag));
 
             hrv_rmssd(samplesize<5) = NaN;
         end
@@ -310,7 +310,7 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
     NNx(isnan(diff(RR)))=NaN;
     
     if num==0
-        hrv_NNx = nansum(NNx);
+        hrv_NNx = HRV.nansum(NNx);
         hrv_pNNx = hrv_NNx./(sum(~isnan(NNx))-1+flag);
     else 
         if ceil(num*(1-overlap))>1
@@ -322,7 +322,7 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
             end 
             samplesize = sum(~isnan(ts),2);
             
-            hrv_NNx_tmp = nansum(ts,2);
+            hrv_NNx_tmp = HRV.nansum(ts,2);
             hrv_pNNx_tmp = hrv_NNx_tmp./(samplesize-1+flag);
             hrv_pNNx_tmp(samplesize<5) = NaN;
     
@@ -337,7 +337,7 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
             end    
             samplesize = sum(~isnan(ts),2);
 
-            hrv_NNx = nansum(ts,2);
+            hrv_NNx = HRV.nansum(ts,2);
             hrv_pNNx = hrv_NNx./(samplesize-1+flag);
             hrv_pNNx(samplesize<5) = NaN;
         end
@@ -422,7 +422,7 @@ function [TRI,TINN] = triangular_val(RR,num,w,overlap)
             for i=1:TRI_X-1
                 N(i) = TI_N(i,h(1:TRI_X));
             end
-            N = find(N==nanmin(N),1);
+            N = find(N==HRV.nanmin(N),1);
         else
             N = TRI_X-1;
         end
@@ -461,7 +461,7 @@ function [TRI,TINN] = triangular_val(RR,num,w,overlap)
                 for i=find(h~=0,1):TRI_X-1
                     N(i) = TI_N(i,h(1:TRI_X));
                 end
-                N = find(N==nanmin(N),1);
+                N = find(N==HRV.nanmin(N),1);
             else
                 N = TRI_X-1;
             end
@@ -940,13 +940,13 @@ function hr = HR(RR,num)
     RR = RR(:);
     
     if num==0
-        hr = 60*sum(double(~isnan(RR)))./nansum(RR); 
+        hr = 60*sum(double(~isnan(RR)))./HRV.nansum(RR); 
     else
         ts = NaN(length(RR),num);
         for j=1:num
             ts(j:end,j) = RR(1:end-j+1);
         end
-        hr = 60*sum(double(~isnan(ts)),2)./nansum(ts,2); 
+        hr = 60*sum(double(~isnan(ts)),2)./HRV.nansum(ts,2); 
     end
 end
 
@@ -1231,6 +1231,36 @@ function rrx_view(RR,grades,xl)
     end
 end
 
+function m = nanmin(x, y, varargin)
+    if (nargin == 1) %one variable only
+        xnan = isnan(x);
+        x(isnan(x)) = inf;
+        m = min(x);
+        m(all(xnan)) = nan;
+    elseif (nargin == 2) %two variables
+        xnan = isnan(x);
+        ynan = isnan(y);
+        x(xnan) = inf;
+        y(ynan) = inf;
+        m = min(x, y);
+        m(xnan & ynan) = nan;
+    elseif (nargin >= 3) && not(isempty(y)) %two variables, dimension specified
+        dim = varargin{1};
+        xnan = isnan(x);
+        ynan = isnan(y);
+        x(xnan) = inf;
+        y(ynan) = inf;
+        m = min(x, y, dim);
+        m(xnan & ynan) = nan;
+    elseif (nargin >= 3) && isempty(y) %one variable, dimension specified
+        dim = varargin{1};
+        xnan = isnan(x);
+        x(xnan) = inf;
+        m = min(x, [], dim);
+        m(all(xnan,dim)) = nan;   
+    end    
+end
+
 function s = nanstd(x, opt, varargin)
     
     % check input
@@ -1267,6 +1297,21 @@ function s = nanstd(x, opt, varargin)
       error('HRV.nanstd: unkown normalization type');
     end    
 end    
+
+function s = nansum(x, varargin)
+    
+    % check input
+    if (nargin < 2)
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{1};
+    end
+    
+    % replace nans with zeros and compute the sum
+    x(isnan(x)) = 0;
+    s = sum(x, dim);    
+end
 
 function m = nanmean(x, varargin)
     
