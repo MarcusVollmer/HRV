@@ -1022,7 +1022,7 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
     valid = valid(1:end-1)&valid(2:end);
     
     rr_med  = @(rr,z,valid) HRV.nanmedian(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
-    rr_iqr  = @(rr,z,valid) iqr(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
+    rr_iqr  = @(rr,z,valid) HRV.iqr(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
    
     if num>0
         med = NaN(size(rr_pct));
@@ -1333,6 +1333,62 @@ function m = nanmedian (x, varargin)
     start = floor(start / prod(sx(1:dim-1))) * prod(sx(1:dim)) + ...
                mod(start, prod(sx(1:dim-1))); %first point along dimension
     m = x(start + step*ceil(n./2-0.5)+1) + x(start + step*floor(n./2-0.5)+1)/2;
+end
+
+function r = iqr(x, varargin)
+    
+    % check input
+    if nargin < 2
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{1};
+    end
+
+    % compute quartiles and difference of them
+    r = diff(HRV.quantile(x, [1/4 3/4], dim), 1, dim);
+end
+
+function q = quantile(x, p, varargin)
+    
+    % check input
+    if (nargin < 3)
+        dim = find(size(x)>1, 1);
+        if isempty(dim), dim=1; end;
+    else
+        dim = varargin{1};
+    end
+    
+    if (nargin < 2) || isempty(p)
+        p = [0 1 2 3 4]'/4;
+    end
+    
+    if not(isvector(p)) || sum(p<0) || sum(p>1)
+        error('HRV.quantile: p must be a vector with entries between 0 and 1');
+    end
+    if not(iscolumn(p))
+        p = p';
+    end
+    
+    % make dimension dim the first one and remember the sizes of x before
+    % and after
+    sx = size(x); % e.g. [10 20 5];
+    ndim = length(sx);
+    x = shiftdim(x, dim-1);
+    sxs = circshift(sx', 1-dim)'; % [20 5 10] when dim=2
+    n = sxs(1); % e.g. 20
+    
+    % calculate quantiles using method #5 from 
+    % https://en.wikipedia.org/w/index.php?title=Quantile&oldid=723990537
+    x = sort(x, 1);
+    x = [x(1,:); x(1:n,:); x(n,:)];
+    h = n*p + 1.5;
+    h_ = floor(h);
+    q = x(h_,:) + repmat(h-h_,[1 prod(sxs(2:ndim))]).*(x(h_+1,:) - x(h_,:));
+    q = reshape(q, [length(p) sxs(2:ndim)]);
+    q = shiftdim(q, ndim+1-dim); %reverse shift of dimensions
+    sx(dim) = length(p);
+    q = reshape(q, sx); %because shiftdim removes singleton dimension dim
 end
     
     end
