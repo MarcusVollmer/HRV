@@ -20,7 +20,7 @@
     <header>
     <div class="myinner">
       <div class="inner">
-        <h1 class="rrfp">HRVTool<font size="+3"><sub> 0.95</sub></font></h1>
+        <h1 class="rrfp">HRVTool<font size="+3"><sub> 0.96</sub></font></h1>
         <h2>Analyzing Heart Rate Variability</h2>
         <a href="https://github.com/MarcusVollmer/HRV" class="button"><small>View project on</small> GitHub</a>
       </div>
@@ -34,8 +34,14 @@
 <a id="whats-new" class="anchor" href="#whats-new" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's new?</h3>
 
 <p>
+<font size="-2">29 June 2016</font><br>
+The new Version 0.96 is online. You can install the  <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">App for Matlab</a>.
+Whats new: The application runs independently from additional Matlab Toolboxes. That's why we have created some helper functions which are stored in the class HRV.m. Many thanks to Stefan Frenzel who forced this change and who has written the most helper functions.
+</p>
+
+<p>
 <font size="-2">01 June 2016</font><br>
-The new Version 0.95 is online. You can install the  <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">App for Matlab</a>.
+The new Version 0.95 is online.
 Whats new: You can now load <b>long term raw data (24h-ECGs)</b>. An additional beat annotation file can be loaded additionally. Otherwise the integrated heart beat detector will do the annotation for you (on basis of 5 minute segements of your raw data to save memory). In this case you will be asked for the waveform type (Human ECG, Human Pulsatile or Rat ECG). "Fast" settings uses a downsampling step. Other waveform types can be added and parameter settings can be changed manually in order to improve the heart beat detection. The annotation file can be saved separetely. According to the analysis of long term data you are able to type the <b>local period in another format</b>: "00:03:00..00:03:30" (HH:MM:SS..HH:MM:SS) in addition to "180:210" (SS:SS).
 </p>
 
