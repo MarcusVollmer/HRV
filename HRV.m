@@ -1,8 +1,9 @@
 classdef HRV
 %Heart Rate Variability
-%Continuous measurement for long and short term ECG recordings. All
-%available methods uses matrix operations as possible, to obtain local HRV
-%measures for long sequences of RR intervals. Missing values are accepted.
+%Continuous measurement for long and short term RR Intervals. All available
+%methods uses matrix operations as far as possible, to obtain local HRV
+%measures for long sequences of RR intervals. Missing values will be
+%accepted.
 %
 %   Available HRV methods:
 %       SDSD - Compute standard deviation of successive differences
@@ -22,9 +23,18 @@ classdef HRV
 %       HR - Compute the average heart rate
 %       rrx - Compute relative RR intervals
 %       rrHRV - Compute HRV based on relative RR intervals
-%       myquantile - Compute quantiles of each row of a matrix 
 %       RRfilter - Remove artifacts from RR sequences using rrx
 %       pattern - Recognition of patterns and regularities in data
+%
+%   Available helper functions:
+%       nanmin
+%       nanmax
+%       nansum
+%       nanmedian
+%       nanquantile - Compute quantiles along a dimension of a matrix 
+%       nanmean
+%       nanstd
+%       nanzscore
 %
 %
 %   Example:  HRV analysis of a sythetic RR sequence having an average
@@ -88,12 +98,15 @@ classdef HRV
 %      Computing in Cardiology 2015; 42:609-612.
 %      preprint: http://www.cinc.org/archives/2015/pdf/0609.pdf
 %
-%   
+%   Acknowledgements:
+%       I want to thank Stefan Frenzel for providing source code for the
+%       helper functions nanmin, nanmax, nansum, nanmedian, nanmean, nanstd
+%
 %   MIT License (MIT) Copyright (c) 2015 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 11 March 2016
-%   version: 0.16
+%   last modified: 29 June 2016
+%   version: 0.17
 
     properties
     end
@@ -122,6 +135,9 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
 %      and HRV.SDSD(RR,0,1) is 0.0994 and HRV.SDSD(RR,0,0) is 0.1054.
 
     RR = RR(:);
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
     if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
@@ -131,7 +147,7 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
     
     dRR = diff(RR);
     if num==0
-        hrv_sdsd = nanstd(dRR,flag,1);        
+        hrv_sdsd = HRV.nanstd(dRR,flag,1);        
     else
         if ceil(num*(1-overlap))>1
             j=1;
@@ -141,7 +157,7 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
                 j=j+1;
             end
             samplesize = sum(~isnan(ts),2);
-            hrv_sdsd_tmp = nanstd(ts,flag,2); 
+            hrv_sdsd_tmp = HRV.nanstd(ts,flag,2); 
             hrv_sdsd_tmp(samplesize<5) = NaN;
             
             hrv_sdsd = NaN(length(RR),1);  
@@ -152,7 +168,7 @@ function hrv_sdsd = SDSD(RR,num,flag,overlap)
                 ts(j+1:end,j) = dRR(1:end-j+1);
             end
             samplesize = sum(~isnan(ts),2);
-            hrv_sdsd = nanstd(ts,flag,2); 
+            hrv_sdsd = HRV.nanstd(ts,flag,2); 
             hrv_sdsd(samplesize<5) = NaN;
         end
     end    
@@ -164,7 +180,8 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
 %   RR is a vector containing RR intervals in seconds.
 %   num specifies the number of successive values for which the local
 %   standard deviation will be retrospectively computed.
-%   hrv_sdnn is a column vector with the same length as RR.
+%   hrv_sdnn is a column vector with the same length as RR. hrv_sdnn has
+%   NaN values at those positions for which the sample size is smaller 5.
 %   If num equals 0, the global standard deviation will be computed.
 %   hrv_sdnn is then a number.
 %   For faster computation on local measures you can specify an overlap.
@@ -189,7 +206,7 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
     end
     
     if num==0
-        hrv_sdnn = nanstd(RR,flag,1);
+        hrv_sdnn = HRV.nanstd(RR,flag,1);
     else
         if ceil(num*(1-overlap))>1
             j=1;
@@ -199,7 +216,7 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
                 j=j+1;
             end
             samplesize = sum(~isnan(ts),2);
-            hrv_sdnn_tmp = nanstd(ts,flag,2); 
+            hrv_sdnn_tmp = HRV.nanstd(ts,flag,2); 
             hrv_sdnn_tmp(samplesize<5) = NaN;
             
             hrv_sdnn = NaN(length(RR),1);  
@@ -209,7 +226,9 @@ function hrv_sdnn = SDNN(RR,num,flag,overlap)
             for j=1:num
                 ts(j:end,j) = RR(1:end-j+1);
             end
-            hrv_sdnn = nanstd(ts,flag,2);
+            samplesize = sum(~isnan(ts),2);
+            hrv_sdnn = HRV.nanstd(ts,flag,2);
+            hrv_sdnn(samplesize<5) = NaN;
         end
     end
 end
@@ -236,6 +255,9 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
 %      and HRV.RMSSD(RR,0,1) is 0.1000 and HRV.RMSSD(RR,0,0) is 0.1061.
 
     RR = RR(:);
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
     if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end 
@@ -245,7 +267,7 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
     
     dRR = diff(RR).^2;
     if num==0
-        hrv_rmssd = sqrt(nansum(dRR)./(sum(~isnan(dRR))-1+flag));
+        hrv_rmssd = sqrt(HRV.nansum(dRR)./(sum(~isnan(dRR))-1+flag));
     else
         if ceil(num*(1-overlap))>1
             j=1;
@@ -255,7 +277,7 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
                 j=j+1;
             end 
             samplesize = sum(~isnan(ts),2);
-            hrv_rmssd_tmp = sqrt(nansum(ts,2)./(samplesize-1+flag)); 
+            hrv_rmssd_tmp = sqrt(HRV.nansum(ts,2)./(samplesize-1+flag)); 
             hrv_rmssd_tmp(samplesize<5) = NaN;
             
             hrv_rmssd = NaN(length(RR),1);  
@@ -266,8 +288,7 @@ function hrv_rmssd = RMSSD(RR,num,flag,overlap)
                 ts(j+1:end,j) = dRR(1:end-j+1);
             end    
             samplesize = sum(~isnan(ts),2);
-            hrv_rmssd = sqrt(nansum(ts,2)./(samplesize-1+flag));
-
+            hrv_rmssd = sqrt(HRV.nansum(ts,2)./(samplesize-1+flag));
             hrv_rmssd(samplesize<5) = NaN;
         end
     end
@@ -299,6 +320,9 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
 %      and hrv_NNx = 8. 
 
     RR = RR(:);
+    if nargin<3 || isempty(num) || isempty(x)
+        error('HRV.pNNx: wrong number or types of arguments');
+    end
     if nargin<4 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
@@ -310,7 +334,7 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
     NNx(isnan(diff(RR)))=NaN;
     
     if num==0
-        hrv_NNx = nansum(NNx);
+        hrv_NNx = HRV.nansum(NNx);
         hrv_pNNx = hrv_NNx./(sum(~isnan(NNx))-1+flag);
     else 
         if ceil(num*(1-overlap))>1
@@ -322,7 +346,7 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
             end 
             samplesize = sum(~isnan(ts),2);
             
-            hrv_NNx_tmp = nansum(ts,2);
+            hrv_NNx_tmp = HRV.nansum(ts,2);
             hrv_pNNx_tmp = hrv_NNx_tmp./(samplesize-1+flag);
             hrv_pNNx_tmp(samplesize<5) = NaN;
     
@@ -337,7 +361,7 @@ function [hrv_pNNx,hrv_NNx] = pNNx(RR,num,x,flag,overlap)
             end    
             samplesize = sum(~isnan(ts),2);
 
-            hrv_NNx = nansum(ts,2);
+            hrv_NNx = HRV.nansum(ts,2);
             hrv_pNNx = hrv_NNx./(samplesize-1+flag);
             hrv_pNNx(samplesize<5) = NaN;
         end
@@ -364,7 +388,10 @@ function hrv_pNN50 = pNN50(RR,num,flag,overlap)
 %   Example: If RR = repmat([1 .98 .9],1,3),
 %      then HRV.pNN50(RR,6) is [NaN;NaN;NaN;NaN;NaN;0.6;.6667;.6667;.6667]
 %      and HRV.pNN50(RR,6,0) is [NaN;NaN;NaN;NaN;NaN;0.75;.8;.8;.8]. 
-    
+
+    if nargin<2 || isempty(num)
+        num = 0;
+    end    
     if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end  
@@ -401,6 +428,9 @@ function [TRI,TINN] = triangular_val(RR,num,w,overlap)
 %      and HRV.triangular_val(RR,0,1/64) is 3. 
   
     RR = RR(:);
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
     if nargin<3 || isempty(w)
         w = 1/128; %recommended bin size
     end
@@ -422,7 +452,7 @@ function [TRI,TINN] = triangular_val(RR,num,w,overlap)
             for i=1:TRI_X-1
                 N(i) = TI_N(i,h(1:TRI_X));
             end
-            N = find(N==nanmin(N),1);
+            N = find(N==HRV.nanmin(N),1);
         else
             N = TRI_X-1;
         end
@@ -461,7 +491,7 @@ function [TRI,TINN] = triangular_val(RR,num,w,overlap)
                 for i=find(h~=0,1):TRI_X-1
                     N(i) = TI_N(i,h(1:TRI_X));
                 end
-                N = find(N==nanmin(N),1);
+                N = find(N==HRV.nanmin(N),1);
             else
                 N = TRI_X-1;
             end
@@ -503,6 +533,9 @@ function tri = TRI(RR,num,w,overlap)
 %      then HRV.TRI(RR,6) is [1;2;3;2;2.5;3;3;3;3]
 %      and HRV.TRI(RR,0,1/64) is 3. 
 
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
     if nargin<4 || isempty(overlap)
         overlap = 1;
     end 
@@ -534,8 +567,11 @@ function tinn = TINN(RR,num,w,overlap)
 %   Example: If RR = repmat([1 .98 .9],1,3),
 %      then HRV.TINN(RR,6) is
 %      [.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156;.0156]
-%      and HRV.TINN(RR,0,1/64) is 0.0313. 
+%      and HRV.TINN(RR,0,1/64) is 0.0313.
 
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
     if nargin<4 || isempty(overlap)
         overlap = 1;
     end    
@@ -548,16 +584,16 @@ end
 
 function alpha = DFA(RR,boxsize_short,boxsize_long,grade,~) 
 %DFA Detrended Fluctuation Analysis of NN histogram.
-%    Example: 
+%    Examples: 
 %       Ann = rdann('mitdb/100','atr');
-%       alpha = HRV.DFA(diff(Ann)) 
-%       alpha = HRV.DFA(diff(Ann),5:13,14:200) 
-%       alpha = HRV.DFA(RR(2:100),5:16,16:32,2,1)
 %       RR = diff(Ann);
-% for i=1:100:500
-% alpha = HRV.DFA(RR(i:end))
-% end
-
+%       alpha = HRV.DFA(RR) 
+%       alpha = HRV.DFA(RR,5:13,14:200) 
+%       alpha = HRV.DFA(RR(2:100),5:16,16:32,2,1)
+%
+%       for i=1:100:500
+%           alpha = HRV.DFA(RR(i:end))
+%       end
 
     if nargin<5
         graph = false;
@@ -576,7 +612,7 @@ function alpha = DFA(RR,boxsize_short,boxsize_long,grade,~)
     boxsize = [boxsize_short boxsize_long];
     
     
-    y = cumsum(RR-nanmean(RR));
+    y = cumsum(RR-HRV.nanmean(RR));
 
     trend = zeros(size(RR,1),length(boxsize));
     F = NaN(length(boxsize),1);
@@ -601,7 +637,7 @@ function alpha = DFA(RR,boxsize_short,boxsize_long,grade,~)
     if graph
         figure
         ax(1) = subplot(3,2,1);
-            plot(1:size(RR,1),RR-nanmean(RR)); axis tight; hold on;
+            plot(1:size(RR,1),RR-HRV.nanmean(RR)); axis tight; hold on;
             plot([0 size(RR,1)],[0 0],'k','linewidth',2)
         ax(2) = subplot(3,2,3);     
             plot(1:size(RR,1),y); hold on;
@@ -623,11 +659,12 @@ function cdim = CD(RR,m,r,~)
 %CD Correlation Dimension.
 %    Example: 
 %       Ann = rdann('mitdb/100','atr');
-%       Fs = 250;
-%       cdim = HRV.CD(diff(Ann),10,[1:20])
-%       cdim = HRV.CD(diff(Ann)/Fs,10,[1:20]/Fs) 
-%       cdim = HRV.CD(diff(Ann),10,1:100) 
 %       RR = diff(Ann);
+%       Fs = 250;
+%       cdim = HRV.CD(RR,10,[1:20])
+%       cdim = HRV.CD(RR/Fs,10,[1:20]/Fs) 
+%       cdim = HRV.CD(RR,10,1:100) 
+
     if nargin<4
         graph = false;
     else
@@ -673,6 +710,7 @@ function apen = ApEn(RR,num,m,r)
 %       apen = HRV.ApEn(diff(Ann))
 %       Ann = rdann('nsr2db/nsr001','ecg');
 %       apen = HRV.ApEn(diff(Ann(1:1000)))
+
     if nargin<4 || isempty(r)
         r = .2*HRV.SDNN(RR);
     end    
@@ -755,7 +793,9 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF,f,Y,NFFT] = fft_val_fun(RR,Fs,type)
 %   See also INTERP1, FFT.
 
     RR = RR(:);
-        
+    if nargin<2 || isempty(Fs)
+        error('HRV.fft_val_fun: wrong number or types of arguments');
+    end   
     if nargin<3
         type = 'spline';
     end
@@ -788,7 +828,7 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF,f,Y,NFFT] = fft_val_fun(RR,Fs,type)
         NFFT = NaN;
     else
         NFFT = 2^nextpow2(L);
-        Y = fft(zscore(RR_rsmp),NFFT)/L;
+        Y = fft(HRV.nanzscore(RR_rsmp),NFFT)/L;
         f = Fs/2*linspace(0,1,NFFT/2+1);  
 
         YY = 2*abs(Y(1:NFFT/2+1));
@@ -825,6 +865,9 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type,overlap)
 %   See also INTERP1, FFT.
     
     RR = RR(:);
+    if nargin<3 || isempty(num) || isempty(Fs)
+        error('HRV.fft_val: wrong number or types of arguments');
+    end
     if nargin<4 || isempty(type)
         type = 'spline';
     end
@@ -877,6 +920,9 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
 %      SD1SD2ratio = [NaN;NaN;0.6;1.7321;1.4354;1.4195;1.732;1.732;1.732].
 
     RR = RR(:);
+    if nargin<2 || isempty(num)
+        num = 0;
+    end    
     if nargin<3 || isempty(flag)
         flag = 1; %The flag is 0 or 1 to specify normalization by n-1 or n.
     end
@@ -890,8 +936,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
     XR = R*X;
     
     if num==0
-        SD2 = nanstd(XR(1,:),flag,2);
-        SD1 = nanstd(XR(2,:),flag,2);          
+        SD2 = HRV.nanstd(XR(1,:),flag,2);
+        SD1 = HRV.nanstd(XR(2,:),flag,2);          
     else
         steps = ceil(num*(1-overlap));
         if steps>1
@@ -903,8 +949,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
                 ts2(j,1:i-max(1,i-num+1)+1) = XR(2,max(1,i-num+1):i);                
                 j=j+1;
             end
-            SD2_tmp = nanstd(ts1,flag,2);
-            SD1_tmp = nanstd(ts2,flag,2); 
+            SD2_tmp = HRV.nanstd(ts1,flag,2);
+            SD1_tmp = HRV.nanstd(ts2,flag,2); 
             
             SD2 = NaN(length(RR),1);
             SD1 = NaN(length(RR),1);
@@ -917,8 +963,8 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
                 ts1(j+1:end,j) = XR(1,1:end-j+1);
                 ts2(j+1:end,j) = XR(2,1:end-j+1);        
             end
-            SD2 = nanstd(ts1,flag,2);
-            SD1 = nanstd(ts2,flag,2);
+            SD2 = HRV.nanstd(ts1,flag,2);
+            SD1 = HRV.nanstd(ts2,flag,2);
         end
     end
     SD1SD2ratio = SD1./SD2;
@@ -938,15 +984,18 @@ function hr = HR(RR,num)
 %      63.1579;62.6866;63.6364;62.6866;63.6364].
     
     RR = RR(:);
+    if nargin<2 || isempty(num)
+        num = 0;
+    end   
     
     if num==0
-        hr = 60*sum(double(~isnan(RR)))./nansum(RR); 
+        hr = 60*sum(double(~isnan(RR)))./HRV.nansum(RR); 
     else
         ts = NaN(length(RR),num);
         for j=1:num
             ts(j:end,j) = RR(1:end-j+1);
         end
-        hr = 60*sum(double(~isnan(ts)),2)./nansum(ts,2); 
+        hr = 60*sum(double(~isnan(ts)),2)./HRV.nansum(ts,2); 
     end
 end
 
@@ -1000,10 +1049,13 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
 %   (rr(i),rr(i+1)) with (rr(i+1),rr(i+2))).
 %
 %   Example: If RR = repmat([1 .98 .9],1,3),
-%      then HRV.rrHRV(RR,0) is 10.8142 and [med,qr,shift] = HRV.rrHRV(RR,0)
-%      results in med = 10.8142 and qr = 5.9494 and 
-%      shift = [-0.2857 -1.2143].
+%      then HRV.rrHRV(RR) is 10.846 and [med,qr,shift] = HRV.rrHRV(RR)
+%      results in med = 10.846 and qr = 6.8389 and 
+%      shift = [-0.2899 -1.2171].
 
+    if nargin<2 || isempty(num)
+        num = 0;
+    end
     if nargin<3 || isempty(type)
         type = 'central';
     end
@@ -1019,10 +1071,10 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
 
     rr_pct = HRV.rrx(RR,grade)*100;
     valid = abs(rr_pct)<tolerance;
-    valid = valid(1:end-1)&valid(2:end);
+    valid = valid(1:end-1) & valid(2:end);
     
-    rr_med  = @(rr,z,valid) nanmedian(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
-    rr_iqr  = @(rr,z,valid) iqr(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
+    rr_med  = @(rr,z,valid) HRV.nanmedian(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)));
+    rr_iqr  = @(rr,z,valid) diff(HRV.nanquantile(sqrt(sum([rr([valid; false])-z(1) rr([false; valid])-z(2)].^2,2)),[.25 .75]));
    
     if num>0
         med = NaN(size(rr_pct));
@@ -1086,7 +1138,7 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
             % euclidean distance of successive points 
             p2p = [NaN; sqrt(filter(ones(2,1),1,diff(rr_pct).^2))];
             if num==0
-                quant = HRV.myquantile(p2p',[.25 .5 .75]);
+                quant = HRV.nanquantile(p2p',[.25 .5 .75]);
                 med = quant(2);
                 qr = quant(3)-quant(1);
             else              
@@ -1094,7 +1146,7 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
                 for j=1:num
                     ts(j:end,j) = p2p(1:(end-j+1));
                 end
-                quant = HRV.myquantile(ts,[.25 .5 .75]);
+                quant = HRV.nanquantile(ts,[.25 .5 .75]);
                 med = quant(:,2);
                 qr = quant(:,3)-quant(:,1);
             end
@@ -1113,40 +1165,14 @@ function [med,qr,shift] = rrHRV(RR,num,type,overlap,grade,tolerance)
 %                 ts(:,tmp:tmp+num-j-1) = p2p(:,1:(end-j+1));
 %                 tmp = tmp+num-j;
 %             end
-%             quant = HRV.myquantile(ts,[.25 .5 .75]);
+%             quant = HRV.nanquantile(ts,[.25 .5 .75]);
 %             med = quant(:,2);
 %             qr = quant(:,3)-quant(:,1);
                      
         otherwise
-            warning('Unknown rrHRV type.')
+            warning('HRV.m: Unknown rrHRV type.')
     end
    
-end
-
-function x_quant = myquantile(x,quantiles)
-%myquantile Quantiles of each row of a matrix.
-%   x_quant = myquantile(x,quantiles) computes quantiles of each row of a
-%   matrix.
-%   x is a matrix.
-%   quantiles is a row vector with probabilities.
-%   x_quant is a matrix containing desired quantiles.
-%
-%   Example: If x = [1 2 NaN; 3 4 5; 6 7 8] and quantiles=[.25 .50],
-%      then HRV.myquantile(x,quantiles) is [1.0 1.5; 3.0 4.0; 6.0 7.0].
-
-    x = sort(x,2);
-    
-    n = sum(~isnan(x),2);
-    
-    q = repmat(quantiles,size(x,1),1).*repmat(n,1,size(quantiles,2)) + ...
-       repmat((0:size(x,1)-1)'*size(x,2),1,size(quantiles,2));
-    q(q==0) = 1;
-    
-    x = x'; x = x(:);
-    
-    x_quant1 = (x(ceil(q))+x(ceil(q)+1))/2;
-    x_quant = x(ceil(q));
-    x_quant(floor(q)==ceil(q)) = x_quant1(floor(q)==ceil(q));
 end
 
 
@@ -1230,6 +1256,230 @@ function rrx_view(RR,grades,xl)
         j=j+1;
     end
 end
+
+
+
+
+% The following functions are helper functions to be independent from
+% matlab toolboxes 
+function m = nanmin(x,y,varargin)
+    if (nargin == 1) %one variable only
+        xnan = isnan(x);
+        x(xnan) = inf;
+        m = min(x);
+        m(all(xnan)) = NaN;
+    elseif (nargin == 2) %two variables
+        xnan = isnan(x); x(xnan) = inf;
+        ynan = isnan(y); y(ynan) = inf;      
+        m = min(x,y);
+        m(xnan & ynan) = NaN;
+    elseif (nargin >= 3)        
+        dim = varargin{1};
+        xnan = isnan(x); x(xnan) = inf;
+        ynan = isnan(y); y(ynan) = inf;
+        m = min(x, y, dim);
+        if isempty(y) %one variable, dimension specified                  
+            m(all(xnan,dim)) = nan;               
+        else %two variables, dimension specified
+            m(xnan & ynan) = nan;
+        end
+    end    
+end
+
+
+function m = nanmax(x,y,varargin)
+    if (nargin == 1) %one variable only
+        xnan = isnan(x);
+        x(xnan) = inf;
+        m = max(x);
+        m(all(xnan)) = NaN;
+    elseif (nargin == 2) %two variables
+        xnan = isnan(x); x(xnan) = inf;
+        ynan = isnan(y); y(ynan) = inf;      
+        m = max(x,y);
+        m(xnan & ynan) = NaN;
+    elseif (nargin >= 3)        
+        dim = varargin{1};
+        xnan = isnan(x); x(xnan) = inf;
+        ynan = isnan(y); y(ynan) = inf;
+        m = max(x, y, dim);
+        if isempty(y) %one variable, dimension specified                  
+            m(all(xnan,dim)) = nan;               
+        else %two variables, dimension specified
+            m(xnan & ynan) = nan;
+        end
+    end    
+end
+
+
+function s = nansum(x, varargin)
+    if (nargin < 2) % check input
+        dim = find(size(x)>1, 1);
+        if isempty(dim)
+            dim=1;
+        end
+    else
+        dim = varargin{1};
+    end
+    
+    % replace nans with zeros and compute the sum
+    x(isnan(x)) = 0;
+    s = sum(x, dim);    
+end
+
+
+function med = nanmedian(x,varargin)
+     if nargin < 2 % check input
+         dim = find(size(x)>1, 1);
+         if isempty(dim)
+             dim=1;
+         end
+     else
+         dim = varargin{:};
+     end
+ 
+     % determine number of regular (not nan) data points
+     n = sum(not(isnan(x)), dim);
+ 
+     % sort data (nans move to the end)
+     x = sort(x, dim);
+ 
+     % calculate median of regular data points only
+     sx = size(x);
+     step = prod(sx(1:dim-1)); %linear indexing step between consecutive points along dimension
+     start = reshape((0:(prod(sx)/sx(dim)-1)), size(n));
+     start = floor(start / prod(sx(1:dim-1))) * prod(sx(1:dim)) + ...
+                mod(start, prod(sx(1:dim-1))); %first point along dimension
+     med = x(start + step*ceil(n./2-0.5)+1)/2 + x(start + step*floor(n./2-0.5)+1)/2;
+end
+
+
+function x_quant = nanquantile(x,quantiles,varargin)
+%nanquantile Computes empirical quantiles of each column or row of a matrix
+%without any interpolation scheme.
+%   x_quant = nanquantile(x,quantiles) computes quantiles of each column of
+%   a matrix.
+%   x is a matrix.
+%   quantiles is a vector with probabilities.
+%   dim specifies in which dimension the quantiles will be computed.
+%   x_quant is a matrix containing desired quantiles.
+%
+%   Example: If x = [1 2 NaN; 3 4 5; 6 7 8] and quantiles=[.25 .50],
+%      then HRV.nanquantile(x,quantiles) is [1.0 3.0 6.0; 1.5 4.0 7.0]
+%      and HRV.nanquantile(x,quantiles,2) is [1.0 3.0; 2.0 4.0; 5.0 6.5].
+
+    if (nargin < 3) % check input
+        dim = find(size(x)==1, 1);
+        if isempty(dim)
+            dim=1;
+        end
+    else
+        dim = varargin{1};
+    end
+    quantiles = quantiles(:);
+    
+    if dim==1
+        x = x';
+    end
+            
+    x = sort(x,1);
+    n = sum(~isnan(x),1);    
+    q = repmat(quantiles,1,size(x,2)).*repmat(n,size(quantiles,1),1) + ...
+        repmat((0:(size(x,2)-1))*size(x,1),size(quantiles,1),1);              
+
+    q(q==0) = 1;
+    x = x(:);
+    
+    x_quant1 = (x(ceil(q))+x(min(size(x,1),ceil(q)+1)))/2;
+    x_quant = x(ceil(q));
+    x_quant(floor(q)==ceil(q)) = x_quant1(floor(q)==ceil(q));
+    
+    if dim>1
+        x_quant = x_quant';
+    end    
+end
+
+
+function m = nanmean(x, varargin)
+    if (nargin < 2) % check input
+        dim = find(size(x)>1,1);
+        if isempty(dim)
+            dim = 1;
+        end
+    else
+        dim = varargin{1};
+    end
+
+    % determine number of regular (not nan) data points
+    n = sum(not(isnan(x)),dim);
+
+    % replace nans with zeros and compute mean value(s)
+    x(isnan(x)) = 0;
+    n(n==0) = nan;
+    m = sum(x,dim)./n;
+end
+
+
+function s = nanstd(x, opt, varargin)
+    if (nargin < 3) % check input
+        dim = find(size(x)>1,1);
+        if isempty(dim)
+            dim = 1;
+        end
+    else
+        dim = varargin{1};
+    end
+     
+    if (nargin < 2) || isempty(opt)
+        opt = 0;
+    end
+ 
+    % determine number of regular (not nan) data points and nans
+    n = sum(not(isnan(x)),dim);
+	nnan = sum(isnan(x),dim);
+     
+    % replace nans with zeros, remove mean value(s) and compute squared sums
+    x(isnan(x)) = 0;
+    m = sum(x, dim)./n;
+    x = x-repmat(m, size(x)./size(m));
+    s = sum(x.^2, dim);
+
+    % remove contributions of added zeros
+    s = s-(m.^2).*nnan;
+
+    % normalization
+    if (opt == 0)
+        s = sqrt(s./max(n-1,1));
+    elseif (opt == 1)
+        s = sqrt(s./n);
+    else
+        error('HRV.nanstd: unkown normalization type');
+    end
+end
+
+
+function [z,m,s] = nanzscore(x,opt,varargin)
+    if (nargin < 3) % check input
+        dim = find(size(x)>1,1);
+        if isempty(dim)
+            dim = 1;
+        end
+    else
+        dim = varargin{1};
+    end
+
+    if (nargin < 2) || isempty(opt)
+        opt = 0;
+    end
+
+    % compute mean value(s) and standard deviation(s)
+    m = HRV.nanmean(x,dim);
+    s = HRV.nanstd(x,opt,dim);    
+    % computer z scores
+    z = (x-repmat(m,size(x)./size(m)))./repmat(s,size(x)./size(s));
+end
+
+
 
 
     end
