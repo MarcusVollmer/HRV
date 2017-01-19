@@ -20,7 +20,7 @@
     <header>
     <div class="myinner">
       <div class="inner">
-        <h1 class="rrfp">HRVTool<font size="+3"><sub> 0.94</sub></font></h1>
+        <h1 class="rrfp">HRVTool<font size="+3"><sub> 0.97</sub></font></h1>
         <h2>Analyzing Heart Rate Variability</h2>
         <a href="https://github.com/MarcusVollmer/HRV" class="button"><small>View project on</small> GitHub</a>
       </div>
@@ -68,11 +68,13 @@ Supported File Types</h2>
 <code>.ecg</code> Annotations in <a href="http://www.physionet.org/">Physionet</a> format.<br>
 <code>.csv</code> A text file with RR intervals or raw data (waveform).<br>
 <code>.hrm</code> Standard format of heart rate devices of Polar.<br>
+<code>.wav</code> Binary format of the ECG using Hexoskin Smart Shirts.<br>
 </p>
 
 <p>Please make sure to activate the <a href="http://www.polar.com/support/how_to_record_heart_rate_with_polar_v800_rr_recording">recording of RR intervals</a> if you use Polar watches (e.g. RS800CX/CS600X/V800).
  Not every device has such capacity.</p>
-<p>For all formats except .hrm you will be questioned about the sampling frequency and whether your data contains the waveform or RR intervals.</p>
+<p>To generate a binary export of the raw data using Hexoskin smart shirts, please read the <a href="http://support.hexoskin.com/customer/portal/articles/1758581-how-do-i-convert-binary-data-downloaded-from-the-dashboard-" alt="Link to the description of getting binary data using Hexoskin wearable shirts">support article</a>.</p> 
+<p>For all formats except .hrm and .wav you will be questioned about the sampling frequency and whether your data contains the waveform or RR intervals.</p>
 
 <h2><a id="the-interface" href="#the-interface" aria-hidden="true"></a>
 The Interface</h2>
