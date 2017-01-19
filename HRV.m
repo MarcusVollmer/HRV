@@ -105,8 +105,8 @@ classdef HRV
 %   MIT License (MIT) Copyright (c) 2015 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 29 June 2016
-%   version: 0.17
+%   last modified: 27 July 2016
+%   version: 0.19
 
     properties
     end
@@ -1340,17 +1340,22 @@ function med = nanmedian(x,varargin)
  
      % determine number of regular (not nan) data points
      n = sum(not(isnan(x)), dim);
- 
-     % sort data (nans move to the end)
-     x = sort(x, dim);
- 
-     % calculate median of regular data points only
-     sx = size(x);
-     step = prod(sx(1:dim-1)); %linear indexing step between consecutive points along dimension
-     start = reshape((0:(prod(sx)/sx(dim)-1)), size(n));
-     start = floor(start / prod(sx(1:dim-1))) * prod(sx(1:dim)) + ...
-                mod(start, prod(sx(1:dim-1))); %first point along dimension
-     med = x(start + step*ceil(n./2-0.5)+1)/2 + x(start + step*floor(n./2-0.5)+1)/2;
+     if n==0 
+         med = NaN;
+     elseif isempty(n)
+         med = [];
+     else     
+         % sort data (nans move to the end)
+         x = sort(x, dim);
+
+         % calculate median of regular data points only
+         sx = size(x);
+         step = prod(sx(1:dim-1)); %linear indexing step between consecutive points along dimension
+         start = reshape((0:(prod(sx)/sx(dim)-1)), size(n));
+         start = floor(start / prod(sx(1:dim-1))) * prod(sx(1:dim)) + ...
+                    mod(start, prod(sx(1:dim-1))); %first point along dimension
+         med = x(start + step*ceil(n./2-0.5)+1)/2 + x(start + step*floor(n./2-0.5)+1)/2;
+     end
 end
 
 
@@ -1378,21 +1383,25 @@ function x_quant = nanquantile(x,quantiles,varargin)
     end
     quantiles = quantiles(:);
     
-    if dim==1
-        x = x';
-    end
-            
-    x = sort(x,1);
-    n = sum(~isnan(x),1);    
-    q = repmat(quantiles,1,size(x,2)).*repmat(n,size(quantiles,1),1) + ...
-        repmat((0:(size(x,2)-1))*size(x,1),size(quantiles,1),1);              
+    if isempty(x)
+        x_quant = NaN(size(quantiles));
+    else    
+        if dim==1
+            x = x';
+        end
 
-    q(q==0) = 1;
-    x = x(:);
-    
-    x_quant1 = (x(ceil(q))+x(min(size(x,1),ceil(q)+1)))/2;
-    x_quant = x(ceil(q));
-    x_quant(floor(q)==ceil(q)) = x_quant1(floor(q)==ceil(q));
+        x = sort(x,1);
+        n = sum(~isnan(x),1);    
+        q = repmat(quantiles,1,size(x,2)).*repmat(n,size(quantiles,1),1) + ...
+            repmat((0:(size(x,2)-1))*size(x,1),size(quantiles,1),1);              
+
+        q(q==0) = 1;
+        x = x(:);
+
+        x_quant1 = (x(ceil(q))+x(min(size(x,1),ceil(q)+1)))/2;
+        x_quant = x(ceil(q));
+        x_quant(floor(q)==ceil(q)) = x_quant1(floor(q)==ceil(q));
+    end
     
     if dim>1
         x_quant = x_quant';

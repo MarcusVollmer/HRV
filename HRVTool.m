@@ -8,9 +8,9 @@ function HRVTool
 % Icons licensed under MIT.
 % Copyright (c) 2014 Drifty (http://drifty.com/)
 %
-% Version: 0.96
+% Version: 0.97
 % Author: Marcus Vollmer
-% Date: 29 June 2016
+% Date: 19 January 2017
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
 set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
@@ -18,7 +18,7 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4
 
 global icons qrs_settings AppPath
 
-% Add path for Matlab App user
+% %Add path for Matlab App user
 %    files = matlab.apputil.getInstalledAppInfo;
 %    path = fileparts(files(1).location);
 %    switch computer('arch') 
@@ -30,7 +30,7 @@ global icons qrs_settings AppPath
 %            AppPath = [path filesep 'HRVTool' filesep 'code'];
 %    end 
     
-% Add path for Matlab source code user
+%% Add path for Matlab source code user
 AppPath = cd;
 
 addpath(genpath(AppPath))
@@ -453,8 +453,8 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 0.96;
-HRVTool_version_date = '29 June 2016';
+HRVTool_version = 0.97;
+HRVTool_version_date = '19 January 2017';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
@@ -786,6 +786,64 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         warndlg('This is not a valid type of data. Please specify whether it is a ''waveform'' or a sequence of ''RR intervals''.')
                 end
             end 
+
+        case 'wav'
+            button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
+            [sig_waveform, Fs] = audioread(FileName);
+            unit = {'Impulse'};
+                
+            if strcmp(button,'Yes')                            
+                load_annotation
+                set(F.htextBusy,'String','Busy - Loading annotation file.');
+                drawnow
+            else
+                s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
+                if isempty(s)
+                    prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
+                            'Window length for TMA-Filtering (sec):',...
+                            'Window length for Extrema (sec)','Downsampling factor (integer)'};
+                        dlg_title = 'Input';
+                        num_lines = 1;
+                        def = {'50','220','0.2','0.33','1'};
+                        answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+                        Beat_min = str2double(answer{1});
+                        Beat_max = str2double(answer{2});
+                        wl_tma = ceil(str2double(answer{3})*Fs); 
+                        if isempty(strfind(answer{4},' '))
+                            wl_we = ceil(str2double(answer{4})*Fs);
+                        else
+                            pos = strfind(answer{4},' ');
+                            wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
+                        end
+                        d_fs = Fs/str2double(answer{5});
+                else
+                    Beat_min=qrs_settings.Beat_min(s);
+                    Beat_max=qrs_settings.Beat_max(s);
+                    wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
+                    wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
+                    if isempty(qrs_settings.d_fs(s)) || qrs_settings.d_fs(s)==0
+                        d_fs=Fs;  
+                    else
+                        d_fs=qrs_settings.d_fs(s); 
+                    end
+                end
+
+                set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
+                drawnow
+                qrs_detection                            
+
+            end
+
+            q = HRV.nanquantile(sig_waveform',[.1 .5 .9]);
+            sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
+            set(F.htextBusy,'String','');
+            RR = diff(Ann);
+
+            sig = zeros(max(Ann)+1,1);
+            sig(Ann+1,1)=1; 
+            set(F.hbuttonShowWaveform,'visible','on');
+            
             
         otherwise
             % Open dialog box to load waveform or RR intervals of ordinary
@@ -1181,7 +1239,7 @@ end
 
 %% BUTTONS
 function buttonCD_Callback(hObject, eventdata, handles) 
-    [FileName,PathName] = uigetfile({'*.hrm';'*.txt';'*.csv';'*.ecg';'*.hrv';'*.mat'},'Select the ECG data');
+    [FileName,PathName] = uigetfile({'*.hrm';'*.txt';'*.csv';'*.ecg';'*.hrv';'*.wav';'*.mat'},'Select the ECG data');
     if length(PathName)>1
         set(F.heditFolder,'String',PathName);
         fileextention = FileName(max(strfind(FileName,'.'))+1:end);
@@ -1719,10 +1777,10 @@ end
 function MenuInfo(hObject, eventdata, handles) 
 message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
 'The user interface is made for all people who are interested in HRV, as well as scientists.',...
-'HRVTool has been tested on Windows 7 64bit and Mac OS 10.9.','',...
+'HRVTool has been tested on Windows 7 64bit, Linux Ubuntu 14.04 and Mac OS 10.9.','',...
 'Bug reports and other issues are welcome. Please correspond to marcus.vollmer@uni-greifswald.de.','',...
 'This work and all supported files and functions are licensed under the terms of the MIT License (MIT).',...
-'Copyright (c) 2015 Marcus Vollmer','',HRVTool_version_date};
+'Copyright (c) 2015-2017 Marcus Vollmer','',HRVTool_version_date};
 
     msgbox(message,'HRVTool Info','custom',importdata('logo.png'));
 end
@@ -1865,7 +1923,7 @@ function qrs_detection
     %Segmentation
     seg = ceil(length(sig_waveform)/(300*Fs));
     if seg>2        
-        for i=0:seg
+        for i=0:seg-1
             set(F.htextBusy,'String',['Busy - Beat annotations will be computed. Segment ' num2str(i+1,'%i') ' of ' num2str(seg,'%i')]);
             drawnow
             sig_waveform_tmp = sig_waveform(max(300*Fs*i-10*Fs,1):min(300*Fs*(i+1),length(sig_waveform)));
@@ -2710,31 +2768,35 @@ end
 
 %% Close Request
 function my_closereq(hObject, eventdata, handles)
-    if always
-        selection = 'Always';
-    else
-        selection = questdlg('Do you want to save the settings?','Save settings','Yes','No','Always','Yes');
-    end
-    
-    switch selection 
-        case {'Yes','Always'}
-            save_settings
-            fileID = fopen([AppPath filesep 'HRV_settings.m'],'w');
-            fprintf(fileID,['FileName = ''' FileName ''';\n']);
-            fprintf(fileID,'PathName = ''');
-            fprintf(fileID,'%s',get(F.heditFolder,'String'));
-            fprintf(fileID,[filesep ''';\n']);
-            if strcmp(selection,'Yes')
-                fprintf(fileID,'always = false;\n'); 
-            else
-                fprintf(fileID,'always = true;\n');                
-            end
-            fprintf(fileID,['Position = ' mat2str(get(F.fh,'Position')) ';\n']);        
-            fclose(fileID);
-        case 'No'
-        otherwise
-    end
+    if fopen([AppPath filesep 'never'])==-1
+        if always
+            selection = 'Always';
+        else
+            selection = questdlg('Do you want to save the settings?','Save settings','Yes','No','Always','Yes');
+        end
 
+        switch selection 
+            case {'Yes','Always'}
+                save_settings
+                fileID = fopen([AppPath filesep 'HRV_settings.m'],'w');
+                fprintf(fileID,['FileName = ''' FileName ''';\n']);
+                fprintf(fileID,'PathName = ''');
+                fprintf(fileID,'%s',get(F.heditFolder,'String'));
+                fprintf(fileID,[filesep ''';\n']);
+                if strcmp(selection,'Yes')
+                    fprintf(fileID,'always = false;\n'); 
+                else
+                    fprintf(fileID,'always = true;\n');                
+                end
+                fprintf(fileID,['Position = ' mat2str(get(F.fh,'Position')) ';\n']);        
+                fclose(fileID);
+            case 'No'
+%             case 'Never'
+%                 fileID = fopen([AppPath filesep 'never'],'w');   
+%                 fclose(fileID);
+            otherwise
+        end
+    end
     delete(gcf)
 end
 
