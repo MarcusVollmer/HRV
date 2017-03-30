@@ -8,9 +8,9 @@ function HRVTool
 % Icons licensed under MIT.
 % Copyright (c) 2014 Drifty (http://drifty.com/)
 %
-% Version: 0.97
+% Version: 0.98
 % Author: Marcus Vollmer
-% Date: 19 January 2017
+% Date: 30 March 2017
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
 set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
@@ -18,20 +18,19 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4
 
 global icons qrs_settings AppPath
 
-% %Add path for Matlab App user
-%    files = matlab.apputil.getInstalledAppInfo;
-%    path = fileparts(files(1).location);
-%    switch computer('arch') 
-%        case 'win64'
-%            AppPath = [path filesep 'HRVTool' filesep 'HRVTool'];    
-%        case 'glnxa64'
-%            AppPath = [path filesep 'HRVTool' filesep 'code'];
-%        case 'maci64'
-%            AppPath = [path filesep 'HRVTool' filesep 'code'];
-%    end 
-    
-%% Add path for Matlab source code user
-AppPath = cd;
+%Add path for Matlab App user
+   files = matlab.apputil.getInstalledAppInfo;
+   AppPath = files(strcmp({files.name},'HRVTool')).location;
+   if exist([AppPath filesep 'HRVTool.m'],'file')~=2
+       if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
+           AppPath = [AppPath filesep 'code'];
+       elseif  exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
+           AppPath = [AppPath filesep 'HRVTool'];
+       end
+   end
+   
+% % Add path for Matlab source code user
+%    AppPath = cd;
 
 addpath(genpath(AppPath))
 
@@ -453,8 +452,8 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 0.97;
-HRVTool_version_date = '19 January 2017';
+HRVTool_version = 0.98;
+HRVTool_version_date = '30 March 2017';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
@@ -789,7 +788,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
 
         case 'wav'
             button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
-            [sig_waveform, Fs] = audioread(FileName);
+            [sig_waveform, Fs] = audioread([get(F.heditFolder,'String') FileName]);
             unit = {'Impulse'};
                 
             if strcmp(button,'Yes')                            
@@ -864,7 +863,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         load_annotation                        
                         fileID = fopen([get(F.heditFolder,'String') FileName],'r');
                         dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
-                        fclose(fileID);
+                        fclose(fileID);                        
                         sig_waveform = dataArray{:,1}; clearvars dataArray;
                         unit = {'Impulse'};                        
                         drawnow
@@ -901,6 +900,16 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         fileID = fopen([get(F.heditFolder,'String') FileName],'r');
                         dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
                         fclose(fileID);
+                        if dataArray{2}{1}(1)==','
+                            point = questdlg('It seems that your file uses the decimal mark ''comma''. A ''point'' mark is required. Do you want to change the decimal mark from Comma to Point and try again?','Decimal mark question','Yes and replace.','No - Stop please.','Yes and replace.');
+                            if strcmp(point,'Yes and replace.')
+                                file = memmapfile([get(F.heditFolder,'String') FileName], 'writable', true);
+                                file.Data(transpose(file.Data==uint8(','))) = uint8('.');
+                                fopen([get(F.heditFolder,'String') FileName],'r');
+                                dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
+                                fclose(fileID);
+                            end
+                        end                        
                         sig_waveform = dataArray{:,1}; clearvars dataArray;
 
                         set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
@@ -2853,7 +2862,7 @@ function create_HRV_settings
 'This is your first use with this version. Please help to improve this application!','',...
 'If there is something misunderstanding, not working or missing please correspond to marcus.vollmer@uni-greifswald.de. Your bug reports and issues are welcome.','',...
 'This work and all supported files and functions are licensed under the terms of the MIT License (MIT).',...
-'Copyright (c) 2015-2016 Marcus Vollmer','',HRVTool_version_date};
+'Copyright (c) 2015-2017 Marcus Vollmer','',HRVTool_version_date};
 
     msgbox(message,'HRVTool','custom',importdata('logo.png'));
 end
