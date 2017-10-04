@@ -3,14 +3,14 @@ function HRVTool
 %  
 % Analyzing Heart Rate Variability
 % Licensed under MIT.
-% Copyright (c) 2015 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)
+% Copyright (c) 2015-2017 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)
 %
 % Icons licensed under MIT.
 % Copyright (c) 2014 Drifty (http://drifty.com/)
 %
-% Version: 0.98
+% Version: 0.99
 % Author: Marcus Vollmer
-% Date: 30 March 2017
+% Date: 04 October 2017
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
 set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
@@ -452,8 +452,8 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 0.98;
-HRVTool_version_date = '30 March 2017';
+HRVTool_version = 0.99;
+HRVTool_version_date = '04 October 2017';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
@@ -842,6 +842,64 @@ function buttonStart_Callback(hObject, eventdata, handles)
             sig = zeros(max(Ann)+1,1);
             sig(Ann+1,1)=1; 
             set(F.hbuttonShowWaveform,'visible','on');
+          
+        case 'edf'
+            [sig_waveform, Fs, StartDate] = read_edf([get(F.heditFolder,'String') FileName], 1);
+            unit = {'Impulse'};
+            
+            button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
+            if strcmp(button,'Yes')                            
+                load_annotation
+                set(F.htextBusy,'String','Busy - Loading annotation file.');
+                drawnow
+            else
+                s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
+                if isempty(s)
+                    prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
+                            'Window length for TMA-Filtering (sec):',...
+                            'Window length for Extrema (sec)','Downsampling factor (integer)'};
+                        dlg_title = 'Input';
+                        num_lines = 1;
+                        def = {'50','220','0.2','0.33','1'};
+                        answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+                        Beat_min = str2double(answer{1});
+                        Beat_max = str2double(answer{2});
+                        wl_tma = ceil(str2double(answer{3})*Fs); 
+                        if isempty(strfind(answer{4},' '))
+                            wl_we = ceil(str2double(answer{4})*Fs);
+                        else
+                            pos = strfind(answer{4},' ');
+                            wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
+                        end
+                        d_fs = Fs/str2double(answer{5});
+                else
+                    Beat_min=qrs_settings.Beat_min(s);
+                    Beat_max=qrs_settings.Beat_max(s);
+                    wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
+                    wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
+                    if isempty(qrs_settings.d_fs(s)) || qrs_settings.d_fs(s)==0
+                        d_fs=Fs;  
+                    else
+                        d_fs=qrs_settings.d_fs(s); 
+                    end
+                end
+
+                set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
+                drawnow
+                qrs_detection                            
+
+            end
+
+            q = HRV.nanquantile(sig_waveform',[.1 .5 .9]);
+            sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
+            set(F.htextBusy,'String','');
+            RR = diff(Ann);
+
+            sig = zeros(max(Ann)+1,1);
+            sig(Ann+1,1)=1; 
+            set(F.hbuttonShowWaveform,'visible','on');
+          
             
             
         otherwise
@@ -1248,7 +1306,7 @@ end
 
 %% BUTTONS
 function buttonCD_Callback(hObject, eventdata, handles) 
-    [FileName,PathName] = uigetfile({'*.hrm';'*.txt';'*.csv';'*.ecg';'*.hrv';'*.wav';'*.mat'},'Select the ECG data');
+    [FileName,PathName] = uigetfile({'*.hrm';'*.txt';'*.csv';'*.ecg';'*.hrv';'*.wav';'*.edf';'*.mat'},'Select the ECG data');
     if length(PathName)>1
         set(F.heditFolder,'String',PathName);
         fileextention = FileName(max(strfind(FileName,'.'))+1:end);

@@ -105,8 +105,8 @@ classdef HRV
 %   MIT License (MIT) Copyright (c) 2015 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 27 July 2016
-%   version: 0.19
+%   last modified: 04 October 2017
+%   version: 0.20
 
     properties
     end
@@ -764,9 +764,9 @@ function apen = ApEn(RR,num,m,r)
 % toc
 
     if num==0
-        apen = mean(log(Cm))/mean(log(Cm1));
+        apen = mean(log(Cm))-mean(log(Cm1));
     else
-        apen = filter(ones(num,1)/num,1,[NaN(m-1,1); log(Cm)])./...
+        apen = filter(ones(num,1)/num,1,[NaN(m-1,1); log(Cm)])-...
             filter(ones(num,1)/num,1,[NaN(m,1); log(Cm1)]);
     end
 end
