@@ -8,9 +8,12 @@ function HRVTool
 % Icons licensed under MIT.
 % Copyright (c) 2014 Drifty (http://drifty.com/)
 %
-% Version: 0.99
+% Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
+% Copyright (c) 2009, Jimmy Shen
+%
+% Version: 1.00
 % Author: Marcus Vollmer
-% Date: 04 October 2017
+% Date: 23 October 2018
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
 set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
@@ -19,15 +22,15 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4
 global icons qrs_settings AppPath
 
 %Add path for Matlab App user
-   files = matlab.apputil.getInstalledAppInfo;
-   AppPath = files(strcmp({files.name},'HRVTool')).location;
-   if exist([AppPath filesep 'HRVTool.m'],'file')~=2
-       if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
-           AppPath = [AppPath filesep 'code'];
-       elseif  exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
-           AppPath = [AppPath filesep 'HRVTool'];
-       end
-   end
+    files = matlab.apputil.getInstalledAppInfo;
+    AppPath = files(strcmp({files.name},'HRVTool')).location;
+    if exist([AppPath filesep 'HRVTool.m'],'file')~=2
+        if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
+            AppPath = [AppPath filesep 'code'];
+        elseif  exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
+            AppPath = [AppPath filesep 'HRVTool'];
+        end
+    end
    
 % % Add path for Matlab source code user
 %    AppPath = cd;
@@ -452,8 +455,8 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 0.99;
-HRVTool_version_date = '04 October 2017';
+HRVTool_version = 1.00;
+HRVTool_version_date = '23 October 2018';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
@@ -619,6 +622,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
     
     drawnow
     switch lower(fileextention)
+% Load HRM files
         case 'hrm'
             fileID = fopen([get(F.heditFolder,'String') FileName],'r');
             dataArray = textscan(fileID,'%s%s%[^\n\r]',50,'Delimiter','=','ReturnOnError',false);
@@ -651,7 +655,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
             sig(Ann+1,1)=1;
             unit = {'Impulse'};
             
-
+% Load ECG files
         case 'ecg'
             if ~isempty(which('rdann'))
                 old_path = cd;
@@ -663,17 +667,19 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 Fs = str2double(dataArray{3});
                 dataArray = textscan(fileID,'%s%[^\n\r]',1,'ReturnOnError',false);
                 name = {[name{1} dataArray{2}]};
-                fclose(fileID); clearvars  dataArray;
+                fclose(fileID); clearvars dataArray;
 
                 cd(old_path) 
 
                 RR = diff(Ann);
                 sig = zeros(max(Ann)+1,1);
                 sig(Ann+1,1)=1; 
-                unit = {'Impulse'}; 
+                unit = {'Impulse'};
+            else
+                warndlg('Cannot find ''rdann''. Please install the WFDB Toolbox from PhysioNet.org.')
             end
             
-            
+% Load MAT files            
         case 'mat'
             matObj = matfile([get(F.heditFolder,'String') FileName(1:end-4) '.mat']);
             fn = fieldnames(matObj);
@@ -711,72 +717,34 @@ function buttonStart_Callback(hObject, eventdata, handles)
 
                 switch answer{1}
                     case {'waveform','w'}
-                        button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
-                        if strcmp(button,'Yes')                            
-                            load_annotation
-                            sig_waveform = matObj.(data_name);
-                            unit = {'Impulse'};
-                            set(F.htextBusy,'String','Busy - Loading annotation file.');
-                            drawnow
-                        else
-                            s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
-                            if isempty(s)
-                                prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
-                                        'Window length for TMA-Filtering (sec):',...
-                                        'Window length for Extrema (sec)','Downsampling factor (integer)'};
-                                    dlg_title = 'Input';
-                                    num_lines = 1;
-                                    def = {'50','220','0.2','0.33','1'};
-                                    answer = inputdlg(prompt,dlg_title,num_lines,def);
+                        sig_waveform = matObj.(data_name);
+                        dialog_annotationfile
 
-                                    Beat_min = str2double(answer{1});
-                                    Beat_max = str2double(answer{2});
-                                    wl_tma = ceil(str2double(answer{3})*Fs); 
-                                    if isempty(strfind(answer{4},' '))
-                                        wl_we = ceil(str2double(answer{4})*Fs);
-                                    else
-                                        pos = strfind(answer{4},' ');
-                                        wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
-                                    end
-                                    d_fs = Fs/str2double(answer{5});
-                            else
-                                Beat_min=qrs_settings.Beat_min(s);
-                                Beat_max=qrs_settings.Beat_max(s);
-                                wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
-                                wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
-                                if isempty(qrs_settings.d_fs(s)) || qrs_settings.d_fs(s)==0
-                                    d_fs=Fs;  
-                                else
-                                    d_fs=qrs_settings.d_fs(s); 
-                                end
-                            end
-                            
-                            sig_waveform = matObj.(data_name);
-                            unit = {'Impulse'};
-                            set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
-                            drawnow
-                            qrs_detection                            
-                            
-                        end
-                        
-                        q = HRV.nanquantile(sig_waveform',[.05 .5 .95]);
-                        sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
-                        set(F.htextBusy,'String','');
-                        RR = diff(Ann);
-
-                        sig = zeros(max(Ann)+1,1);
-                        sig(Ann+1,1)=1; 
-                        set(F.hbuttonShowWaveform,'visible','on');
-                        
                     case {'RR intervals','rr','RR'}
-                        RR = matObj.(data_name);
+                        prompt = {'Is your interval data stored as milliseconds or seconds?):'};
+                        answerI = questdlg(prompt,'Interval format','Milliseconds','Seconds','Milliseconds');
+                        if strcmp(answerI,'Milliseconds')
+                            RR = matObj.(data_name);
+                            Fs = 1000;
+                        else
+                            RR = 1000*matObj.(data_name);
+                            Fs = 1000;
+                        end
+
                         Ann = round(cumsum([0;RR]));
                         sig = zeros(max(Ann)+1,1);
                         sig(Ann+1,1)=1;        
                         unit = {'Impulse'};  
                         
-                    case {'Annotation','Annotations','Ann','ann'}                        
-                        Ann = matObj.(data_name);
+                    case {'Annotation','Annotations','Ann','ann'}   
+                        prompt = {'Is your annotation data stored as milliseconds or seconds?):'};
+                        answerI = questdlg(prompt,'Interval format','Milliseconds','Seconds','Milliseconds');
+                        if strcmp(answerI,'Milliseconds')
+                            Ann = matObj.(data_name);
+                        else
+                            Ann = 1000*matObj.(data_name);
+                        end
+                        
                         RR = diff(Ann);
                         sig = zeros(max(Ann)+1,1);
                         sig(Ann+1,1)=1;        
@@ -784,124 +752,31 @@ function buttonStart_Callback(hObject, eventdata, handles)
                     otherwise
                         warndlg('This is not a valid type of data. Please specify whether it is a ''waveform'' or a sequence of ''RR intervals''.')
                 end
-            end 
-
-        case 'wav'
-            button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
-            [sig_waveform, Fs] = audioread([get(F.heditFolder,'String') FileName]);
-            unit = {'Impulse'};
-                
-            if strcmp(button,'Yes')                            
-                load_annotation
-                set(F.htextBusy,'String','Busy - Loading annotation file.');
-                drawnow
-            else
-                s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
-                if isempty(s)
-                    prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
-                            'Window length for TMA-Filtering (sec):',...
-                            'Window length for Extrema (sec)','Downsampling factor (integer)'};
-                        dlg_title = 'Input';
-                        num_lines = 1;
-                        def = {'50','220','0.2','0.33','1'};
-                        answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-                        Beat_min = str2double(answer{1});
-                        Beat_max = str2double(answer{2});
-                        wl_tma = ceil(str2double(answer{3})*Fs); 
-                        if isempty(strfind(answer{4},' '))
-                            wl_we = ceil(str2double(answer{4})*Fs);
-                        else
-                            pos = strfind(answer{4},' ');
-                            wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
-                        end
-                        d_fs = Fs/str2double(answer{5});
-                else
-                    Beat_min=qrs_settings.Beat_min(s);
-                    Beat_max=qrs_settings.Beat_max(s);
-                    wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
-                    wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
-                    if isempty(qrs_settings.d_fs(s)) || qrs_settings.d_fs(s)==0
-                        d_fs=Fs;  
-                    else
-                        d_fs=qrs_settings.d_fs(s); 
-                    end
-                end
-
-                set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
-                drawnow
-                qrs_detection                            
-
             end
+            
+% Load WAV files
+        case 'wav'
+            [sig_waveform, Fs] = audioread([get(F.heditFolder,'String') FileName]);
+            dialog_annotationfile
 
-            q = HRV.nanquantile(sig_waveform',[.1 .5 .9]);
-            sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
-            set(F.htextBusy,'String','');
-            RR = diff(Ann);
-
-            sig = zeros(max(Ann)+1,1);
-            sig(Ann+1,1)=1; 
-            set(F.hbuttonShowWaveform,'visible','on');
-          
+% Load EDF files          
         case 'edf'
             [sig_waveform, Fs, StartDate] = read_edf([get(F.heditFolder,'String') FileName], 1);
-            unit = {'Impulse'};
+            dialog_annotationfile           
             
-            button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
-            if strcmp(button,'Yes')                            
-                load_annotation
-                set(F.htextBusy,'String','Busy - Loading annotation file.');
-                drawnow
-            else
-                s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
-                if isempty(s)
-                    prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
-                            'Window length for TMA-Filtering (sec):',...
-                            'Window length for Extrema (sec)','Downsampling factor (integer)'};
-                        dlg_title = 'Input';
-                        num_lines = 1;
-                        def = {'50','220','0.2','0.33','1'};
-                        answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-                        Beat_min = str2double(answer{1});
-                        Beat_max = str2double(answer{2});
-                        wl_tma = ceil(str2double(answer{3})*Fs); 
-                        if isempty(strfind(answer{4},' '))
-                            wl_we = ceil(str2double(answer{4})*Fs);
-                        else
-                            pos = strfind(answer{4},' ');
-                            wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
-                        end
-                        d_fs = Fs/str2double(answer{5});
-                else
-                    Beat_min=qrs_settings.Beat_min(s);
-                    Beat_max=qrs_settings.Beat_max(s);
-                    wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
-                    wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
-                    if isempty(qrs_settings.d_fs(s)) || qrs_settings.d_fs(s)==0
-                        d_fs=Fs;  
-                    else
-                        d_fs=qrs_settings.d_fs(s); 
-                    end
-                end
-
-                set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
-                drawnow
-                qrs_detection                            
-
+% Load ACQ files            
+        case 'acq'
+            matObj = load_acq([get(F.heditFolder,'String') FileName]);
+            
+            hdr = struct2table(matObj.hdr.per_chan_data);
+            [s,v] = listdlg('PromptString', 'Select a channel:', 'SelectionMode', 'single', 'ListString', hdr.comment_text);
+            if v>0
+                sig_waveform = matObj.data(:,s);
+                Fs = 1000/matObj.hdr.graph.sample_time;
+                dialog_annotationfile
             end
-
-            q = HRV.nanquantile(sig_waveform',[.1 .5 .9]);
-            sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
-            set(F.htextBusy,'String','');
-            RR = diff(Ann);
-
-            sig = zeros(max(Ann)+1,1);
-            sig(Ann+1,1)=1; 
-            set(F.hbuttonShowWaveform,'visible','on');
-          
             
-            
+ % Load other files
         otherwise
             % Open dialog box to load waveform or RR intervals of ordinary
             % text files 
@@ -914,88 +789,64 @@ function buttonStart_Callback(hObject, eventdata, handles)
             Fs = str2double(answer{2});
             
             switch answer{1}
-                case {'waveform','w'}
-                    button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
-                    if strcmp(button,'Yes')
-                        set(F.htextBusy,'String','Busy - Loading waveform and annotation file.');
-                        load_annotation                        
-                        fileID = fopen([get(F.heditFolder,'String') FileName],'r');
-                        dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
-                        fclose(fileID);                        
-                        sig_waveform = dataArray{:,1}; clearvars dataArray;
-                        unit = {'Impulse'};                        
-                        drawnow
-                    else                        
-                        s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
-                        if isempty(s)
-                            prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
-                                    'Window length for TMA-Filtering (sec):',...
-                                    'Window length for Extrema (sec)','Downsampling factor (integer)'};
-                                dlg_title = 'Input';
-                                num_lines = 1;
-                                def = {'50','220','0.2','0.33','1'};
-                                answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-                                Beat_min = str2double(answer{1});
-                                Beat_max = str2double(answer{2});
-                                wl_tma = ceil(str2double(answer{3})*Fs); 
-                                if isempty(strfind(answer{4},' '))
-                                    wl_we = ceil(str2double(answer{4})*Fs);
-                                else
-                                    pos = strfind(answer{4},' ');
-                                    wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
-                                end
-                                d_fs = Fs/str2double(answer{5});
-                        else
-                            Beat_min=qrs_settings.Beat_min(s);
-                            Beat_max=qrs_settings.Beat_max(s);
-                            wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
-                            wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
-                            d_fs=Fs;                            
-                        end  
-                        
-                        set(F.htextBusy,'String','Busy - Loading waveform.');
-                        fileID = fopen([get(F.heditFolder,'String') FileName],'r');
-                        dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
-                        fclose(fileID);
-                        if dataArray{2}{1}(1)==','
-                            point = questdlg('It seems that your file uses the decimal mark ''comma''. A ''point'' mark is required. Do you want to change the decimal mark from Comma to Point and try again?','Decimal mark question','Yes and replace.','No - Stop please.','Yes and replace.');
-                            if strcmp(point,'Yes and replace.')
-                                file = memmapfile([get(F.heditFolder,'String') FileName], 'writable', true);
-                                file.Data(transpose(file.Data==uint8(','))) = uint8('.');
-                                fopen([get(F.heditFolder,'String') FileName],'r');
-                                dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
-                                fclose(fileID);
-                            end
-                        end                        
-                        sig_waveform = dataArray{:,1}; clearvars dataArray;
-
-                        set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
-                        drawnow
-                        qrs_detection
+                case {'waveform','w'}                    
+                    set(F.htextBusy,'String','Busy - Loading waveform.');
+                    fileID = fopen([get(F.heditFolder,'String') FileName],'r');
+                    dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
+                    fclose(fileID);
+                    try
+                    if dataArray{2}{1}(1)==','
+                        point = questdlg('It seems that your file uses the decimal mark ''comma''. A ''point'' mark is required. Do you want to change the decimal mark from Comma to Point and try again?','Decimal mark question','Yes and replace.','No - Stop please.','Yes and replace.');
+                        if strcmp(point,'Yes and replace.')
+                            file = memmapfile([get(F.heditFolder,'String') FileName], 'writable', true);
+                            file.Data(transpose(file.Data==uint8(','))) = uint8('.');
+                            fopen([get(F.heditFolder,'String') FileName],'r');
+                            dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
+                            fclose(fileID);
+                        end
+                    end  
+                    catch
                     end
+                    sig_waveform = dataArray{:,1}; clearvars dataArray;                    
                     
-                    q = HRV.nanquantile(sig_waveform',[.05 .5 .95]);
-                    sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
-                    set(F.htextBusy,'String','');
-                    RR = diff(Ann);
-                    
-                    sig = zeros(max(Ann)+1,1);
-                    sig(Ann+1,1)=1;
-                    set(F.hbuttonShowWaveform,'visible','on');
+                    dialog_annotationfile
+
 
                 case {'RR intervals','rr','RR'}
                     fileID = fopen([get(F.heditFolder,'String') FileName],'r');
                     dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
                     fclose(fileID);
-                    RR = dataArray{:,1}; clearvars dataArray;
+                    matObj = dataArray{:,1}; clearvars dataArray;
+
+                    prompt = {'Is your interval data stored as milliseconds or seconds?):'};
+                    answerI = questdlg(prompt,'Interval format','Milliseconds','Seconds','Milliseconds');
+                    if strcmp(answerI,'Milliseconds')
+                        RR = matObj(:);
+                        Fs = 1000;
+                    else
+                        RR = 1000*matObj(:);
+                        Fs = 1000;
+                    end
+
                     Ann = round(cumsum([0;RR]));
-                        
+                    sig = zeros(max(Ann)+1,1);
+                    sig(Ann+1,1)=1;        
+                    unit = {'Impulse'};  
+
                 case {'Annotation','Annotations','Ann','ann'} 
                     fileID = fopen([get(F.heditFolder,'String') FileName],'r');
                     dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
                     fclose(fileID);
-                    Ann = dataArray{:,1}; clearvars dataArray;
+                    matObj = dataArray{:,1}; clearvars dataArray;
+                    
+                    prompt = {'Is your annotation data stored as milliseconds or seconds?):'};
+                    answerI = questdlg(prompt,'Interval format','Milliseconds','Seconds','Milliseconds');
+                    if strcmp(answerI,'Milliseconds')
+                        Ann = matObj(:);
+                    else
+                        Ann = 1000*matObj(:);
+                    end
+
                     RR = diff(Ann);
                     sig = zeros(max(Ann)+1,1);
                     sig(Ann+1,1)=1;        
@@ -1306,7 +1157,7 @@ end
 
 %% BUTTONS
 function buttonCD_Callback(hObject, eventdata, handles) 
-    [FileName,PathName] = uigetfile({'*.hrm';'*.txt';'*.csv';'*.ecg';'*.hrv';'*.wav';'*.edf';'*.mat'},'Select the ECG data');
+    [FileName,PathName] = uigetfile({'*.acq';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.txt';'*.wav'},'Select the ECG data');
     if length(PathName)>1
         set(F.heditFolder,'String',PathName);
         fileextention = FileName(max(strfind(FileName,'.'))+1:end);
@@ -1351,7 +1202,6 @@ function buttonTitle_Callback(hObject, eventdata, handles)
     title(F.ha1,name{signal_num},'Interpreter','none')
     set(F.htoolbarTitle,'State','off')
 end
-
 
 function buttonIntervalNext_Callback(hObject, eventdata, handles)  
     calc_on
@@ -1502,7 +1352,6 @@ function buttonRemoveArtifact_Callback(hObject, eventdata, handles)
     calc_off
 end
 
-
 function buttonRemoveArtifact2_Callback(hObject, eventdata, handles) 
 
     [x, y] = getpts(F.ha6);
@@ -1649,7 +1498,6 @@ function buttonAnimation_Callback(hObject, eventdata, handles)
         animation
     end
 end
-
 
 function buttonTachogramType_Callback(hObject, eventdata, handles) 
     calc_on  
@@ -1827,10 +1675,12 @@ end
 
 function MenuTerms(hObject, eventdata, handles)
 message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
-'This work and all supported files and functions are licensed under the terms of the MIT License (MIT).','',...
+'Supporting files to load BIOPAC ACQ data (load_acq.m, acq2mat.m) are licensed by Jimmy Shen given the copyright notice LICENSE_ACQ.','',...
+'Copyright (c) 2009, Jimmy Shen','',...
+'All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS.','',...
 'Icons licensed under MIT. Copyright (c) 2014 Drifty (http://drifty.com/)','',...
 'The MIT License (MIT)','',...
-'Copyright (c) 2015 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)','',...
+'Copyright (c) 2015-2018 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)','',...
 ['Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal'...
 'in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell'...
 'copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:'],'',...
@@ -1844,10 +1694,10 @@ end
 function MenuInfo(hObject, eventdata, handles) 
 message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
 'The user interface is made for all people who are interested in HRV, as well as scientists.',...
-'HRVTool has been tested on Windows 7 64bit, Linux Ubuntu 14.04 and Mac OS 10.9.','',...
+'HRVTool has been tested on Windows 7 64bit, Linux Ubuntu 18.04 and Mac OS 10.9.','',...
 'Bug reports and other issues are welcome. Please correspond to marcus.vollmer@uni-greifswald.de.','',...
 'This work and all supported files and functions are licensed under the terms of the MIT License (MIT).',...
-'Copyright (c) 2015-2017 Marcus Vollmer','',HRVTool_version_date};
+'Copyright (c) 2015-2018 Marcus Vollmer','',HRVTool_version_date};
 
     msgbox(message,'HRVTool Info','custom',importdata('logo.png'));
 end
@@ -1867,6 +1717,66 @@ function calc_off
     set(F.htextBusy,'BackgroundColor',[1 1 1])
     drawnow
 end
+
+%% Dialog boxes
+function dialog_annotationfile
+    button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
+    unit = {'Waveform'};
+    
+    if strcmp(button,'Yes')                            
+        load_annotation       
+        set(F.htextBusy,'String','Busy - Loading annotation file.');
+        drawnow
+    else
+        s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
+        if isempty(s)
+            prompt = {'Beat_min (bpm):','Beat_max (bpm):',...
+                    'Window length for TMA-Filtering (sec):',...
+                    'Window length for Extrema (sec)','Downsampling factor (integer)'};
+                dlg_title = 'Input';
+                num_lines = 1;
+                def = {'50','220','0.2','0.33','1'};
+                answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+                Beat_min = str2double(answer{1});
+                Beat_max = str2double(answer{2});
+                wl_tma = ceil(str2double(answer{3})*Fs); 
+                if isempty(strfind(answer{4},' '))
+                    wl_we = ceil(str2double(answer{4})*Fs);
+                else
+                    pos = strfind(answer{4},' ');
+                    wl_we = [ceil(str2double(answer{4}(1:pos))*Fs) ceil(str2double(answer{4}(pos:end))*Fs)];
+                end
+                d_fs = Fs/str2double(answer{5});
+        else
+            Beat_min=qrs_settings.Beat_min(s);
+            Beat_max=qrs_settings.Beat_max(s);
+            wl_tma=ceil(qrs_settings.wl_tma(s)*Fs);
+            wl_we=ceil(qrs_settings.wl_we(s,:).*Fs);
+            if isempty(qrs_settings.d_fs(s)) || qrs_settings.d_fs(s)==0
+                d_fs=Fs;  
+            else
+                d_fs=qrs_settings.d_fs(s); 
+            end
+        end
+
+        set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
+        drawnow
+        qrs_detection                            
+
+    end
+
+    q = HRV.nanquantile(sig_waveform',[.05 .5 .95]);
+    sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
+    set(F.htextBusy,'String','');
+    RR = diff(Ann);
+
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1; 
+    set(F.hbuttonShowWaveform,'visible','on');
+        
+end
+
 
 
 %% Main function
@@ -2918,9 +2828,11 @@ function create_HRV_settings
     message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
 'The user interface is made for all people who are interested in HRV, as well as scientists.',...
 'This is your first use with this version. Please help to improve this application!','',...
-'If there is something misunderstanding, not working or missing please correspond to marcus.vollmer@uni-greifswald.de. Your bug reports and issues are welcome.','',...
-'This work and all supported files and functions are licensed under the terms of the MIT License (MIT).',...
-'Copyright (c) 2015-2017 Marcus Vollmer','',HRVTool_version_date};
+'If there is something misunderstanding, not working or missing please correspond to marcus.vollmer@uni-greifswald.de. Your bug reports and issues are welcome.',...
+'Supporting files to load BIOPAC ACQ data (load_acq.m, acq2mat.m) are licensed by Jimmy Shen given the copyright notice LICENSE_ACQ.','',...
+'Copyright (c) 2009, Jimmy Shen','',...
+'All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS.',...
+'Copyright (c) 2015-2018 Marcus Vollmer','',HRVTool_version_date};
 
     msgbox(message,'HRVTool','custom',importdata('logo.png'));
 end
