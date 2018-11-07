@@ -11,9 +11,9 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.00
+% Version: 1.01
 % Author: Marcus Vollmer
-% Date: 23 October 2018
+% Date: 07 November 2018
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
 set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
@@ -23,14 +23,9 @@ global icons qrs_settings AppPath
 
 %Add path for Matlab App user
     files = matlab.apputil.getInstalledAppInfo;
-    AppPath = files(strcmp({files.name},'HRVTool')).location;
-    if exist([AppPath filesep 'HRVTool.m'],'file')~=2
-        if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
-            AppPath = [AppPath filesep 'code'];
-        elseif  exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
-            AppPath = [AppPath filesep 'HRVTool'];
-        end
-    end
+    AppPath = files(strcmp({files.name},'HRVTool')).location;    
+    FileList = dir(fullfile(AppPath, '**', 'HRVTool.m'));
+    AppPath = FileList.folder;
    
 % % Add path for Matlab source code user
 %    AppPath = cd;
@@ -52,7 +47,7 @@ F.hpFootline   = uipanel('Title','','BackgroundColor',1*[1 1 1],'Position',[0 0 
 %Text
 F.htextFilter=uicontrol('Parent',F.hpIntervals,'Style','text',...
     'String','Filter',...
-    'FontSize',9,'Units','normalized','Position',[.9 .425 .075 .1],...
+    'FontSize',9,'Units','normalized','Position',[.9 .525 .075 .1],...
     'FontUnits','normalized','HorizontalAlignment','center',...
     'BackgroundColor',.8*[1 1 1]);
 F.htextAuthor=uicontrol('Parent',F.hpFootline,'Style','text',...
@@ -257,7 +252,7 @@ F.heditLabel = uicontrol('Parent',F.hpIntervals,'Style','edit',...
     'String','','TooltipString','set up the a label for this particular time window',...
     'Callback',@editLabel_Callback);  
 F.heditFilter = uicontrol('Parent',F.hpIntervals,'Style','edit',...
-    'Units','normalized','Position',[.925 .35 .025 .1],'FontUnits','normalized',...
+    'Units','normalized','Position',[.925 .45 .025 .1],'FontUnits','normalized',...
     'String','20','TooltipString','the parameter for automated filtering',...
     'Callback',@editFilter_Callback);  
 F.heditSpeed = uicontrol('Parent',F.hpLocalReturnMap,'Style','edit',...
@@ -309,26 +304,38 @@ F.hbuttonIntervalPrevious2 = uicontrol('Parent',F.hpIntervals,'String','',...
     'TooltipString','Move backwards','CData',[icons.android_arrow_back(:,4:12,:) icons.android_arrow_back(:,5:13,:)],...
     'FontUnits','normalized','Callback', @buttonIntervalPrevious2_Callback);
 F.hbuttonShowWaveform = uicontrol('Parent',F.hpIntervals,'String','Waveform',...
-    'FontSize',9,'Units','normalized','Position',[.9 .8 .075 .1],'visible','off',...
+    'FontSize',9,'Units','normalized','Position',[.9 .85 .075 .1],'visible','off',...
     'FontUnits','normalized','Callback', @buttonShowWaveform_Callback);
 F.hbuttonShowIntervals = uicontrol('Parent',F.hpIntervals,'String','Intervals',...
-    'FontSize',9,'Units','normalized','Position',[.9 .7 .075 .1],...
+    'FontSize',9,'Units','normalized','Position',[.9 .75 .075 .1],...
     'FontUnits','normalized','Callback', @buttonShowIntervals_Callback);
 F.hbuttonShowProportions = uicontrol('Parent',F.hpIntervals,'String','Proportions',...
-    'FontSize',9,'Units','normalized','Position',[.9 .6 .075 .1],...
+    'FontSize',9,'Units','normalized','Position',[.9 .65 .075 .1],...
     'FontUnits','normalized','Callback', @buttonShowProportions_Callback);
 F.hbuttonFilterDecrease = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.9 .35 .025 .1],...
+    'FontSize',12,'Units','normalized','Position',[.9 .45 .025 .1],...
     'TooltipString','More artifact filtering','CData',icons.minus_round,...
     'FontUnits','normalized','Callback', @buttonFilterDecrease_Callback);
 F.hbuttonFilterIncrease = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.95 .35 .025 .1],...
+    'FontSize',12,'Units','normalized','Position',[.95 .45 .025 .1],...
     'TooltipString','Less artifact filtering','CData',icons.plus_round,...
     'FontUnits','normalized','Callback', @buttonFilterIncrease_Callback);
-F.hbuttonRemoveArtifact = uicontrol('Parent',F.hpIntervals,'String','Remove artifact',...
-    'FontSize',9,'Units','normalized','Position',[.9 .2 .075 .1],...
-    'FontUnits','normalized','TooltipString','select multiple beats and confirm with a double click',...
-    'Callback', @buttonRemoveArtifact_Callback);
+F.hbuttonIgnoreBeat = uicontrol('Parent',F.hpIntervals,'String','Ignore beat',...
+    'FontSize',9,'Units','normalized','Position',[.9 .3 .075 .1],...
+    'FontUnits','normalized','TooltipString','Select multiple beats and confirm with a double click',...
+    'Callback', @buttonIgnoreBeat_Callback);
+F.hbuttonRemoveBeat = uicontrol('Parent',F.hpIntervals,'String','Remove',...
+    'FontSize',9,'Units','normalized','Position',[.9 .2 .0375 .1],...
+    'FontUnits','normalized','TooltipString','Select multiple beats and confirm with a double click',...
+    'Callback', @buttonRemoveBeat_Callback);
+F.hbuttonAddBeat = uicontrol('Parent',F.hpIntervals,'String','Add',...
+    'FontSize',9,'Units','normalized','Position',[.9375 .2 .0375 .1],...
+    'FontUnits','normalized','TooltipString','Select multiple beats and confirm with a double click',...
+    'Callback', @buttonAddBeat_Callback);
+F.hbuttonSaveAnnotations = uicontrol('Parent',F.hpIntervals,'String','Save annotations',...
+    'FontSize',9,'Units','normalized','Position',[.9 .1 .075 .1],...
+    'FontUnits','normalized','TooltipString','Save Annotations',...
+    'Callback', @buttonSaveAnnotations_Callback);
 F.hbuttonRemoveArtifact2 = uicontrol('Parent',F.hpContinuous,'String','',...
     'FontSize',12,'Units','normalized','Position',[.9575 .81 .0175 .1],...
     'TooltipString','Remove artifact','CData',icons.ios7_close,...
@@ -439,7 +446,7 @@ set(F.fh,'Visible','on');
 
 % Global Variables
 global always LocalRange FootprintRange HRVTool_version HRVTool_version_date Position font_set my_title;
-global sig sig_waveform unit name name_org Fs Ann;
+global sig sig_waveform unit name name_org Fs Ann Ann_complete Ann_type imported;
 global d_fs Beat_min Beat_max wl_tma wl_we;
 global RR RRorg RRfilt center relRR relRR_pct RR_loc rr_loc;
 global showWaveform showIntervals showProportions RMtype RMnumbers showFootprint showPDF RMmarkersize;
@@ -455,8 +462,8 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 1.00;
-HRVTool_version_date = '23 October 2018';
+HRVTool_version = 1.01;
+HRVTool_version_date = '07 November 2018';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
@@ -621,6 +628,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
     name =  {FileName};
     
     drawnow
+    imported = 0;
     switch lower(fileextention)
 % Load HRM files
         case 'hrm'
@@ -654,13 +662,107 @@ function buttonStart_Callback(hObject, eventdata, handles)
             sig = zeros(max(Ann)+1,1);
             sig(Ann+1,1)=1;
             unit = {'Impulse'};
+            imported = 1;
+  
+              
+% Load PhysioNet annotation file or ISHNE file
+        case {'ecg'}             
+            fid = fopen([PathName filesep FileName],'r');            
+            magic = fread(fid, 8, '*char')'; % MAGIC NUMBER for ISHNE
+            fclose(fid);
             
-% Load ECG files
-        case 'ecg'
+            if strcmp(magic,'ISHNE1.0')
+                % ISHNE ecg file
+                wt = waitbar(0,'Loading your data ...');
+                [sig_waveform, Fs, StartDate] = read_ishne([PathName filesep FileName],1);
+                close(wt)                
+                dialog_annotationfile
+                
+            else             
+                % PhysioNet ecg file
+                if ~isempty(which('rdann'))
+                    old_path = cd;
+                    cd(get(F.heditFolder,'String'))
+                    wt = waitbar(0,'Loading your data ...');
+                    [Ann_complete,Ann_type] = rdann(FileName(1:end-4),fileextention);
+                    close(wt)
+                    fileID = fopen([get(F.heditFolder,'String') FileName(1:end-4) '.hea'],'r');
+                    dataArray = textscan(fileID,'%s%s%s%[^\n\r]',1,'Delimiter',' ','ReturnOnError',false);
+                    Fs = str2double(dataArray{3});
+                    dataArray = textscan(fileID,'%s%[^\n\r]',1,'ReturnOnError',false);
+                    name = {[name{1} dataArray{2}]};
+                    fclose(fileID); clearvars dataArray;
+
+                    cd(old_path) 
+
+                    % Select annotation codes
+                        % Differentiate beats and other annotations
+                        beat_type = intersect(Ann_type,{'N','L','R','B','A','a','J','S','V','r','F','e','j','n','E','/','f','Q','?'});
+                        other_type = setdiff(Ann_type,beat_type);
+                        current_type = [beat_type;other_type];
+
+                        [indx,tf] = listdlg('PromptString','Select annotation codes:','ListString',current_type,...
+                            'InitialValue',1:size(beat_type,1),'OKString','Import');
+                        if tf==1                        
+                            selected_types = current_type(indx);       
+                            Ann = Ann_complete(ismember(Ann_type,selected_types)); 
+
+                            RR = diff(Ann);
+                            sig = zeros(max(Ann)+1,1);
+                            sig(Ann+1,1)=1; 
+                            unit = {'Impulse'};
+                            imported = 1;
+                        end
+
+                else
+                    warndlg('Cannot find ''rdann''. Please install the WFDB Toolbox from PhysioNet.org.')
+                end 
+            end
+    
+% Load ISHNE annotation files
+        case 'ann'
+            fid = fopen([get(F.heditFolder,'String') FileName],'r');            
+            magic = fread(fid, 8, '*char')'; % MAGIC NUMBER for ISHNE
+            fclose(fid);
+            
+            if strcmp(magic,'ANN  1.0')
+                % ISHNE annotation file
+                wt = waitbar(0,'Loading your data ...');
+                [record, header, StartDate] = read_ishne([get(F.heditFolder,'String') FileName],1);
+                
+                Fs = header.Sampling_rate;                
+                name = {[deblank(header.First_name) deblank(header.Last_name)]};
+                record = record(record.Ann>0,:);
+                
+                % Select annotation codes
+                current_type = unique(record.label1);
+                [indx,tf] = listdlg('PromptString','Select annotation codes:','ListString',current_type,...
+                    'InitialValue',1:size(current_type,1),'OKString','Import');
+                if tf==1                        
+                    selected_types = current_type(indx);       
+                    Ann = record.Ann(ismember(record.label1,selected_types)); 
+
+                    RR = diff(Ann);
+                    sig = zeros(max(Ann)+1,1);
+                    sig(Ann+1,1)=1; 
+                    unit = {'Impulse'};
+                    imported = 1;
+                end                
+                
+                close(wt)
+            else
+                warndlg('This file seems not be in ISHNE1.0 format. Import aborted.','Format warning')
+            end
+            
+% Load PhysioNet annotation files
+        case {'atr'}
             if ~isempty(which('rdann'))
                 old_path = cd;
                 cd(get(F.heditFolder,'String'))
-                Ann = rdann(FileName(1:end-4),'ecg');
+                
+                wt = waitbar(0,'Loading your data ...');
+                [Ann_complete,Ann_type] = rdann(FileName(1:end-4),fileextention);
+                close(wt)
 
                 fileID = fopen([get(F.heditFolder,'String') FileName(1:end-4) '.hea'],'r');
                 dataArray = textscan(fileID,'%s%s%s%[^\n\r]',1,'Delimiter',' ','ReturnOnError',false);
@@ -671,14 +773,29 @@ function buttonStart_Callback(hObject, eventdata, handles)
 
                 cd(old_path) 
 
-                RR = diff(Ann);
-                sig = zeros(max(Ann)+1,1);
-                sig(Ann+1,1)=1; 
-                unit = {'Impulse'};
+                % Select annotation codes
+                    % Differentiate beats and other annotations
+                    beat_type = intersect(Ann_type,{'N','L','R','B','A','a','J','S','V','r','F','e','j','n','E','/','f','Q','?'});
+                    other_type = setdiff(Ann_type,beat_type);
+                    current_type = [beat_type;other_type];
+
+                    [indx,tf] = listdlg('PromptString','Select annotation codes:','ListString',current_type,...
+                        'InitialValue',1:size(beat_type,1),'OKString','Import');
+                    if tf==1                        
+                        selected_types = current_type(indx);       
+                        Ann = Ann_complete(ismember(Ann_type,selected_types)); 
+
+                        RR = diff(Ann);
+                        sig = zeros(max(Ann)+1,1);
+                        sig(Ann+1,1)=1; 
+                        unit = {'Impulse'};
+                        imported = 1;
+                    end
+                
             else
-                warndlg('Cannot find ''rdann''. Please install the WFDB Toolbox from PhysioNet.org.')
+                warndlg('Cannot find ''rdann''. Please install and set the path to the WFDB Toolbox from PhysioNet.org.')
             end
-            
+
 % Load MAT files            
         case 'mat'
             matObj = matfile([get(F.heditFolder,'String') FileName(1:end-4) '.mat']);
@@ -686,8 +803,8 @@ function buttonStart_Callback(hObject, eventdata, handles)
             data_name = [];
             
             % filter fieldnames with numeric type
-            for i=1:size(fn,1)
-                fn_num(i) = isnumeric(matObj.(fn{i}));
+            for j=1:size(fn,1)
+                fn_num(j) = isnumeric(matObj.(fn{j}));
             end
             switch sum(fn_num)
                 case 0
@@ -735,6 +852,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         sig = zeros(max(Ann)+1,1);
                         sig(Ann+1,1)=1;        
                         unit = {'Impulse'};  
+                        imported = 1;
                         
                     case {'Annotation','Annotations','Ann','ann'}   
                         prompt = {'Is your annotation data stored as milliseconds or seconds?):'};
@@ -749,6 +867,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         sig = zeros(max(Ann)+1,1);
                         sig(Ann+1,1)=1;        
                         unit = {'Impulse'};
+                        imported = 1;
                     otherwise
                         warndlg('This is not a valid type of data. Please specify whether it is a ''waveform'' or a sequence of ''RR intervals''.')
                 end
@@ -832,6 +951,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                     sig = zeros(max(Ann)+1,1);
                     sig(Ann+1,1)=1;        
                     unit = {'Impulse'};  
+                    imported = 1;
 
                 case {'Annotation','Annotations','Ann','ann'} 
                     fileID = fopen([get(F.heditFolder,'String') FileName],'r');
@@ -851,6 +971,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                     sig = zeros(max(Ann)+1,1);
                     sig(Ann+1,1)=1;        
                     unit = {'Impulse'};
+                    imported = 1;
                     
                 otherwise
                     warndlg('This is not a valid type of data. Please specify whether it is a ''waveform'' or a sequence of ''RR intervals''.')
@@ -919,46 +1040,64 @@ function buttonStart_Callback(hObject, eventdata, handles)
                     otherwise
                 end
             end
-  
+         imported = 1;
+         
     end
-    center = Ann(1:end-1)+RR/2;
     
+	if imported==1
+        center = Ann(1:end-1)+RR/2;
 
-    % Load File Settings
-    if exist([get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'],'file')>0
-        settings_file = [get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'];
-        copyfile(settings_file,[AppPath filesep 'HRV_file_settings.m'])
-        run('HRV_file_settings.m')
-        
-    elseif ~isempty(S)
-        label_lim = S{:,2:3};
-        label_names = table2cell(S(:,1))';
-    end
-    
-    name_org = name;
-    if ~isempty(my_title)
-        name = {[name{1} my_title{1}]};
-    end
-    
-    RRorg = RR/Fs;   
-    if isnan(filter_limit)
-        RRfilt = RRorg;
-    else
-        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
-    end
-    RR = RRfilt;
-    RR(my_artifacts) = NaN; 
-    RR(min(my_artifacts+1,size(RR,1))) = NaN;
-    relRR = HRV.rrx(RR);
-    relRR_pct = round(relRR*1000)/10;
 
-    tachogram  
-    
-    % Load Footprint
-    if exist([get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'],'file')>0
-        if showFootprint
-            set(F.heditLimits,'String',FootprintRange);
-            str = FootprintRange;
+        % Load File Settings
+        if exist([get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'],'file')>0
+            settings_file = [get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'];
+            copyfile(settings_file,[AppPath filesep 'HRV_file_settings.m'])
+            run('HRV_file_settings.m')
+        elseif ~isempty(S)
+            label_lim = S{:,2:3};
+            label_names = table2cell(S(:,1))';
+        end
+
+        name_org = name;
+        if ~isempty(my_title)
+            name = {[name{1} my_title{1}]};
+        end
+
+        RRorg = RR/Fs;   
+        if isnan(filter_limit)
+            RRfilt = RRorg;
+        else
+            RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+        end
+        RR = RRfilt;
+        RR(my_artifacts) = NaN; 
+        RR(min(my_artifacts+1,size(RR,1))) = NaN;
+        relRR = HRV.rrx(RR);
+        relRR_pct = round(relRR*1000)/10;
+
+        tachogram  
+
+        % Load Footprint
+        if exist([get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'],'file')>0
+            if showFootprint
+                set(F.heditLimits,'String',FootprintRange);
+                str = FootprintRange;
+                pos = strfind(str,'..');
+                if isempty(pos)
+                    pos = strfind(str,':');
+                    xl = [str2double(str(1:min(pos)-1)) str2double(str(max(pos)+1:end))];   
+                else
+                    xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
+                end
+                set(F.ha1,'Xlim',xl);
+
+                compute_local
+                update_table_local           
+                showFootprint = not(showFootprint); 
+                buttonFootprint_Callback
+            end
+            set(F.heditLimits,'String',LocalRange);
+            str = LocalRange;
             pos = strfind(str,'..');
             if isempty(pos)
                 pos = strfind(str,':');
@@ -967,48 +1106,33 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
             end
             set(F.ha1,'Xlim',xl);
-            
-            compute_local
-            update_table_local           
-            showFootprint = not(showFootprint); 
-            buttonFootprint_Callback
+            editLimits  
         end
-        set(F.heditLimits,'String',LocalRange);
-        str = LocalRange;
-        pos = strfind(str,'..');
-        if isempty(pos)
-            pos = strfind(str,':');
-            xl = [str2double(str(1:min(pos)-1)) str2double(str(max(pos)+1:end))];   
-        else
-            xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
+
+
+        waveform
+        compute_local
+        localreturnmap
+        poincare
+        spectrum_tachogram
+        update_table_global
+        update_table_local
+        drawnow
+
+        continuousHRV_compute_hf
+        continuousHRV_compute_hrv
+        if showTINN
+            buttonContinuousTINN_Callback
         end
-        set(F.ha1,'Xlim',xl);
-        editLimits  
-    end
+        if showLFHF
+            buttonContinuousLFHF_Callback
+        end
+        continuousHRV_show
 
-     
-    waveform
-    compute_local
-    localreturnmap
-    poincare
-    spectrum_tachogram
-    update_table_global
-    update_table_local
-    drawnow
-    
-    continuousHRV_compute_hf
-    continuousHRV_compute_hrv
-    if showTINN
-        buttonContinuousTINN_Callback
-    end
-    if showLFHF
-        buttonContinuousLFHF_Callback
-    end
-    continuousHRV_show
-    
-    refresh_positionmarker 
+        refresh_positionmarker 
 
-    calc_off
+        calc_off
+    end
 
 end
 
@@ -1133,6 +1257,7 @@ function editMeasuresNum_Callback(hObject, eventdata, handles)
     showTINN = false;
     showLFHF = false;
     vis = true(1,7);
+    continuousHRV_compute_hf
     continuousHRV_compute_hrv
     continuousHRV_show   
     set(F.hbuttonContinuousRecalculation,'visible','off');
@@ -1157,7 +1282,7 @@ end
 
 %% BUTTONS
 function buttonCD_Callback(hObject, eventdata, handles) 
-    [FileName,PathName] = uigetfile({'*.acq';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.txt';'*.wav'},'Select the ECG data');
+    [FileName,PathName] = uigetfile({'*.acq';'*.ann';'*.atr';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.txt';'*.wav'},'Select the ECG data');
     if length(PathName)>1
         set(F.heditFolder,'String',PathName);
         fileextention = FileName(max(strfind(FileName,'.'))+1:end);
@@ -1317,7 +1442,7 @@ function buttonFilterIncrease_Callback(hObject, eventdata, handles)
     calc_off
 end
 
-function buttonRemoveArtifact_Callback(hObject, eventdata, handles) 
+function buttonIgnoreBeat_Callback(hObject, eventdata, handles) 
 
     [x, y] = getpts(F.ha1);
     
@@ -1338,6 +1463,104 @@ function buttonRemoveArtifact_Callback(hObject, eventdata, handles)
     RR(max(my_artifacts,1)) = NaN;
     RR(min(my_artifacts+1,size(RR,1))) = NaN;
     
+    relRR = HRV.rrx(RR);
+    relRR_pct = round(relRR*1000)/10;
+    
+    waveform
+    compute_local    
+    localreturnmap
+    tachogram  
+    spectrum_tachogram
+    poincare
+    update_table 
+    set(F.hbuttonContinuousRecalculation,'visible','on');
+    calc_off
+end
+
+
+function buttonRemoveBeat_Callback(hObject, eventdata, handles) 
+
+    [x, y] = getpts(F.ha1);
+    
+    calc_on    
+    yl = get(F.ha1,'Ylim');
+    x = x(y>yl(1) & y<yl(2));
+
+    for j=1:length(x)
+        [~,x(j)] = min(abs((Ann/Fs-x(j))));
+        %center
+    end
+
+    % Remove beats from annotation data
+    Ann = setdiff(Ann, Ann(x));
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1;
+    RR = diff(Ann);
+    center = Ann(1:end-1)+RR/2;
+
+    % Adjust my_artifacts
+    my_artifacts = setdiff(my_artifacts, x-1);
+    for j=1:length(x)
+        my_artifacts = [my_artifacts(my_artifacts<(x(j)-1)); my_artifacts(my_artifacts>(x(j)-1))-1];
+    end
+    
+    RRorg = RR/Fs;   
+    if isnan(filter_limit)
+        RRfilt = RRorg;
+    else
+        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+    end
+
+    RR = RRfilt;   
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
+     
+    relRR = HRV.rrx(RR);
+    relRR_pct = round(relRR*1000)/10;
+    
+    waveform
+    compute_local    
+    localreturnmap
+    tachogram  
+    spectrum_tachogram
+    poincare
+    update_table 
+    set(F.hbuttonContinuousRecalculation,'visible','on');
+    calc_off
+end
+
+function buttonAddBeat_Callback(hObject, eventdata, handles) 
+
+    [x, y] = getpts(F.ha1);
+    
+    calc_on    
+    yl = get(F.ha1,'Ylim');
+    x = x(y>yl(1) & y<yl(2));
+    
+    % Adjust my_artifacts
+    for j=1:length(my_artifacts)
+        my_artifacts(j) = my_artifacts(j)+sum(max(round(x*Fs),1)<Ann(my_artifacts(j)+1));
+    end    
+
+    % Add beats to annotation data
+    Ann = unique([Ann; max(round(x*Fs),1)]);
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1;
+    RR = diff(Ann);
+    center = Ann(1:end-1)+RR/2;
+
+        
+    RRorg = RR/Fs;   
+    if isnan(filter_limit)
+        RRfilt = RRorg;
+    else
+        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+    end
+
+    RR = RRfilt;   
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
+     
     relRR = HRV.rrx(RR);
     relRR_pct = round(relRR*1000)/10;
     
@@ -1613,7 +1836,6 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
                 unit_val = [1 1 1 1 1000 60 1000 1000 100 1 1000 1000 1000 1 1 1 1];
                 HRVglobal	 = [HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr 1/HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio].*unit_val;
                 HRVlocal     = [HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr 1/HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio].*unit_val;
-                HRVfootprint = [HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr 1/HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio].*unit_val;
                 if ~isempty(HRV_footprint_rrHRV_median)
                     HRVfootprint = [HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr 1/HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio].*unit_val;
                     Results = table(HRVglobal',HRVlocal',HRVfootprint',...
@@ -1774,9 +1996,9 @@ function dialog_annotationfile
     sig = zeros(max(Ann)+1,1);
     sig(Ann+1,1)=1; 
     set(F.hbuttonShowWaveform,'visible','on');
+    imported = 1;
         
 end
-
 
 
 %% Main function
@@ -1922,7 +2144,13 @@ function qrs_detection
             [filename, pathname] = uiputfile({'*.mat';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
             if pathname~=0
                 calc_on
-                save([pathname filename],'Ann')
+                [~,~,ext] = fileparts(filename);
+                switch ext
+                    case '.mat'
+                        save([pathname filename],'Ann')
+                    otherwise
+                        csvwrite([pathname filename], Ann)
+                end
                 calc_off
             end
         case 'No'
@@ -1931,12 +2159,52 @@ function qrs_detection
 
 end
 
-%% Load Annotation file
+%% Annotation file
 function load_annotation
-    [AnnFileName,AnnPathName] = uigetfile({'*.mat';'*.txt';'*.csv'},'Select the annotation file',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
+    [AnnFileName,AnnPathName] = uigetfile({'*.ann';'*.atr';'*.csv';'*.mat';'*.txt'},'Select the annotation file',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
     if length(AnnPathName)>1
         AnnType = AnnFileName(max(strfind(AnnFileName,'.'))+1:end);
         switch AnnType
+            case 'ann'
+                
+            case 'atr' % Load PhysioNet annotation files
+                if ~isempty(which('rdann'))
+                    old_path = cd;
+                    cd(AnnPathName)
+
+                    wt = waitbar(0,'Loading your data ...');
+                    [Ann_complete,Ann_type] = rdann(AnnFileName(1:end-4),AnnType);
+                    close(wt)
+
+                    fileID = fopen([get(F.heditFolder,'String') AnnFileName(1:end-4) '.hea'],'r');
+                    dataArray = textscan(fileID,'%s%s%s%[^\n\r]',1,'Delimiter',' ','ReturnOnError',false);
+                    Fs = str2double(dataArray{3});
+                    fclose(fileID); clearvars dataArray;
+
+                    cd(old_path) 
+
+                    % Select annotation codes
+                        % Differentiate beats and other annotations
+                        beat_type = intersect(Ann_type,{'N','L','R','B','A','a','J','S','V','r','F','e','j','n','E','/','f','Q','?'});
+                        other_type = setdiff(Ann_type,beat_type);
+                        current_type = [beat_type;other_type];
+
+                        [indx,tf] = listdlg('PromptString','Select annotation codes:','ListString',current_type,...
+                            'InitialValue',1:size(beat_type,1),'OKString','Import');
+                        if tf==1                        
+                            selected_types = current_type(indx);       
+                            Ann = Ann_complete(ismember(Ann_type,selected_types)); 
+
+                            RR = diff(Ann);
+                            sig = zeros(max(Ann)+1,1);
+                            sig(Ann+1,1)=1; 
+                            unit = {'Impulse'};
+                            imported = 1;
+                        end
+                else
+                    warndlg('Cannot find ''rdann''. Please install and set the path to the WFDB Toolbox from PhysioNet.org.')
+                end
+                
             case 'mat'
                 AnnmatObj = matfile([AnnPathName AnnFileName]);
                 Annfn = fieldnames(AnnmatObj);
@@ -1968,6 +2236,44 @@ function load_annotation
         end    
     end
 end
+
+function buttonSaveAnnotations_Callback(hObject, eventdata, handles) 
+    [filename, pathname] = uiputfile({'*.mat';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
+    if pathname~=0
+        calc_on
+        [~,~,ext] = fileparts(filename);
+        switch ext
+            case '.mat'
+                save([pathname filename],'Ann')
+            otherwise
+                csvwrite([pathname filename], Ann)
+        end
+        calc_off
+        
+        selection = questdlg('Do you want to export an additional file for ignored beats?','Save ignored beats','Yes','No','Yes');    
+        switch selection 
+            case 'Yes'
+                [filename, pathname] = uiputfile({'*.mat';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ignore.mat']);
+                if pathname~=0
+                    calc_on
+                    Ann_Ignore = Ann(my_artifacts+1);
+                    [~,~,ext] = fileparts(filename);
+                    switch ext
+                        case '.mat'
+                            save([pathname filename],'Ann_Ignore')
+                        otherwise
+                            csvwrite([pathname filename], Ann_Ignore)
+                    end
+                    calc_off
+                end
+            case 'No'
+            otherwise
+        end
+
+    end
+end
+    
+    
 
 %% Compute Local
 function compute_local
@@ -2367,6 +2673,13 @@ function continuousHRV_compute_hrv
     HRV_sdsd = HRV_sdsd(:);
     HRV_pnn50 = HRV_pnn50(:);
     HRV_sd1sd2ratio = HRV_sd1sd2ratio(:);
+    size(HRV_rr_med)
+    size(HRV_rr_iqr)
+    size(HRV_rmssd)
+    size(HRV_sdnn)
+    size(HRV_sdsd)
+    size(HRV_pnn50)
+    size(HRV_sd1sd2ratio)
     toc
 
     set(F.htextBusy,'String','');
@@ -2394,6 +2707,8 @@ function continuousHRV_show
         [HRV_rr_med,HRV_rr_iqr,HRV_rmssd/100,HRV_sd1sd2ratio,HRV_lfhfratio],...
         'Parent',F.ha5);        
     else
+        size(x)
+        size(HRV_hf)
         [hAx,hLine1,hLine2] = plotyy(x,HRV_hf,...
         [x,x,x,x],[HRV_rr_med,HRV_rr_iqr,HRV_rmssd/100,HRV_sd1sd2ratio],...
         'Parent',F.ha5);
