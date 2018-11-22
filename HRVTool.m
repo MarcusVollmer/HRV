@@ -11,9 +11,9 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.01
+% Version: 1.02
 % Author: Marcus Vollmer
-% Date: 07 November 2018
+% Date: 22 November 2018
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
 set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
@@ -22,10 +22,20 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4
 global icons qrs_settings AppPath
 
 %Add path for Matlab App user
-    files = matlab.apputil.getInstalledAppInfo;
-    AppPath = files(strcmp({files.name},'HRVTool')).location;    
+files = matlab.apputil.getInstalledAppInfo;
+AppPath = files(strcmp({files.name},'HRVTool')).location;
+if isunix
     FileList = dir(fullfile(AppPath, '**', 'HRVTool.m'));
     AppPath = FileList.folder;
+else
+    if exist([AppPath filesep 'HRVTool.m'],'file')~=2
+        if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
+            AppPath = [AppPath filesep 'code'];
+        elseif exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
+            AppPath = [AppPath filesep 'HRVTool'];
+        end
+    end
+end
    
 % % Add path for Matlab source code user
 %    AppPath = cd;
@@ -462,8 +472,8 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 1.01;
-HRVTool_version_date = '07 November 2018';
+HRVTool_version = 1.02;
+HRVTool_version_date = '22 November 2018';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
