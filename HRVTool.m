@@ -24,24 +24,24 @@ HRVTool_version_date = '18 March 2019';
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4));
 
-% Add path for Matlab App user
-    files = matlab.apputil.getInstalledAppInfo;
-    AppPath = files(strcmp({files.name},'HRVTool')).location;
-    if isunix
-        FileList = dir(fullfile(AppPath, '**', 'HRVTool.m'));
-        AppPath = FileList.folder;
-    else
-        if exist([AppPath filesep 'HRVTool.m'],'file')~=2
-            if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
-                AppPath = [AppPath filesep 'code'];
-            elseif exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
-                AppPath = [AppPath filesep 'HRVTool'];
-            end
-        end
-    end
+% % Add path for Matlab App user
+%     files = matlab.apputil.getInstalledAppInfo;
+%     AppPath = files(strcmp({files.name},'HRVTool')).location;
+%     if isunix
+%         FileList = dir(fullfile(AppPath, '**', 'HRVTool.m'));
+%         AppPath = FileList.folder;
+%     else
+%         if exist([AppPath filesep 'HRVTool.m'],'file')~=2
+%             if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
+%                 AppPath = [AppPath filesep 'code'];
+%             elseif exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
+%                 AppPath = [AppPath filesep 'HRVTool'];
+%             end
+%         end
+%     end
    
-% % Add path for Matlab source code user
-%    AppPath = cd;
+% Add path for Matlab source code user
+   AppPath = cd;
 
 addpath(genpath(AppPath))
 
