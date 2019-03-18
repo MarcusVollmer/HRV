@@ -3,7 +3,7 @@ function HRVTool
 %  
 % Analyzing Heart Rate Variability
 % Licensed under MIT.
-% Copyright (c) 2015-2017 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)
+% Copyright (c) 2015-2019 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)
 %
 % Icons licensed under MIT.
 % Copyright (c) 2014 Drifty (http://drifty.com/)
@@ -11,31 +11,34 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.02
+% Version: 1.03
 % Author: Marcus Vollmer
-% Date: 22 November 2018
+% Date: 18 March 2019
 
-F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq);
-set(gcf,'Units','inches'); screenposition = get(gcf,'Position');
+F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq, 'ResizeFcn', @my_resizereq);
+set(gcf,'Units','inches');
+
+global icons qrs_settings AppPath HRVTool_version HRVTool_version_date font_size font_size_factor colormode clr screenposition
+HRVTool_version = 1.03;
+HRVTool_version_date = '18 March 2019';
+screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4));
 
-global icons qrs_settings AppPath
-
-%Add path for Matlab App user
-files = matlab.apputil.getInstalledAppInfo;
-AppPath = files(strcmp({files.name},'HRVTool')).location;
-if isunix
-    FileList = dir(fullfile(AppPath, '**', 'HRVTool.m'));
-    AppPath = FileList.folder;
-else
-    if exist([AppPath filesep 'HRVTool.m'],'file')~=2
-        if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
-            AppPath = [AppPath filesep 'code'];
-        elseif exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
-            AppPath = [AppPath filesep 'HRVTool'];
+% Add path for Matlab App user
+    files = matlab.apputil.getInstalledAppInfo;
+    AppPath = files(strcmp({files.name},'HRVTool')).location;
+    if isunix
+        FileList = dir(fullfile(AppPath, '**', 'HRVTool.m'));
+        AppPath = FileList.folder;
+    else
+        if exist([AppPath filesep 'HRVTool.m'],'file')~=2
+            if exist([AppPath filesep 'code' filesep 'HRVTool.m'],'file')==2
+                AppPath = [AppPath filesep 'code'];
+            elseif exist([AppPath filesep 'HRVTool' filesep 'HRVTool.m'],'file')==2
+                AppPath = [AppPath filesep 'HRVTool'];
+            end
         end
     end
-end
    
 % % Add path for Matlab source code user
 %    AppPath = cd;
@@ -45,425 +48,211 @@ addpath(genpath(AppPath))
 load('icons.mat')
 load('qrs_settings.mat')
 
-%Panels
-F.hpSubject    = uipanel('Title','','BackgroundColor',1*[1 1 1],'Position',[0 .975 1 .025],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
-F.hpIntervals  = uipanel('Title','','BackgroundColor',.8*[1 1 1],'Position',[0 .75 1 .225],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
-F.hpResults    = uipanel('Title','','BackgroundColor',[.7 1 1],'Position',[.025 .25 .3 .475],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
-F.hpLocalReturnMap = uipanel('Title','','BackgroundColor',.9*[1 1 1],'Position',[.35 .25 .35 .475],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
-F.hpSpectrum   = uipanel('Title','','BackgroundColor',.9*[1 1 1],'Position',[.725 .25 .275 .475],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
-F.hpContinuous = uipanel('Title','','BackgroundColor',.8*[1 1 1],'Position',[0 .025 1 .2],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
-F.hpFootline   = uipanel('Title','','BackgroundColor',1*[1 1 1],'Position',[0 0 1 .025],'BorderType','none','Units','normalized','FontUnits','normalized','visible','on');
+% Load color scheme
+    colormode = 'dark';
+    switch colormode
+        case 'light'
+            load('clr_light.mat')
+        case 'dark'
+            load('clr_dark.mat')
+            load('icons_inverse.mat')
+        case 'user'
+            load('clr_user.mat')
+        otherwise
+            load('clr_dark.mat')
+    end 
+        
+% Font size
+    font_size = 11;
 
-%Text
-F.htextFilter=uicontrol('Parent',F.hpIntervals,'Style','text',...
-    'String','Filter',...
-    'FontSize',9,'Units','normalized','Position',[.9 .525 .075 .1],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',.8*[1 1 1]);
-F.htextAuthor=uicontrol('Parent',F.hpFootline,'Style','text',...
-    'String','',...
-    'FontSize',10,'Units','normalized','Position',[.55 0 .4 .95],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'FontAngle','italic','BackgroundColor',1*[1 1 1]);
-F.htextBusy=uicontrol('Parent',F.hpFootline,'Style','text',...
-    'String','','ForegroundColor',[1 1 1],...
-    'FontSize',10,'Units','normalized','Position',[.05 0 .45 .95],...
-    'FontUnits','normalized','HorizontalAlignment','left',...
-    'BackgroundColor',0*[1 1 1]);
+% Panels
+    F.hpSubject        = uipanel('Title','','Position',[0 .975 1 .025],'Units','normalized','visible','on');
+    F.hpIntervals      = uipanel('Title','','Position',[0 .75 1 .225],'Units','normalized','visible','on');
+    F.hpResults        = uipanel('Title','','Position',[.025 .25 .3 .475],'Units','normalized','visible','on');
+    F.hpLocalReturnMap = uipanel('Title','','Position',[.35 .25 .35 .475],'Units','normalized','visible','on');
+    F.hpSpectrum       = uipanel('Title','','Position',[.725 .25 .275 .475],'Units','normalized','visible','on');
+    F.hpContinuous     = uipanel('Title','','Position',[0 .025 1 .2],'Units','normalized','visible','on');
+    F.hpFootline       = uipanel('Title','','Position',[0 0 1 .025],'Units','normalized','visible','on');
 
-bgcolor_results = [.7 1 1];
-bgcolor_highlight = [1 .7 .7];
+% Text
+    F.htextFilter = uicontrol('Parent',F.hpIntervals,'Style','text', 'String','Filter', 'Units','normalized', 'Position',[.9 .625 .075 .1], 'HorizontalAlignment','center');
+    F.htextAuthor = uicontrol('Parent',F.hpFootline,'Style','text', 'String','', 'Units','normalized', 'Position',[.55 0 .4 .95], 'HorizontalAlignment','right', 'FontAngle','italic');
+    F.htextBusy   = uicontrol('Parent',F.hpFootline,'Style','text', 'String','', 'Units','normalized', 'Position',[.05 0 .45 .95], 'HorizontalAlignment','left');
 
-label_column = .05;
-global_column = .35;
-local_column = .55;
-footprint_column = .75;
-column_width = .2;
-label_column_width = .275;
+    label_column = .05;
+    global_column = .35;
+    local_column = .55;
+    footprint_column = .75;
+    column_width = .2;
+    label_column_width = .275;
 
+    F.htextHeadline             = uicontrol('Parent',F.hpResults,'Style','text','String','HRV measures','Units','normalized','Position',[.05 .925 .5 .05]);
+    F.htextGlobal               = uicontrol('Parent',F.hpResults,'Style','text','String','global','Units','normalized','Position',[global_column .85 column_width .05]);
+    F.htextLocal                = uicontrol('Parent',F.hpResults,'Style','text','String','local','Units','normalized','Position',[local_column .85 column_width .05]);
+    F.htextFootprint            = uicontrol('Parent',F.hpResults,'Style','text','String','footprint','Units','normalized','Position',[footprint_column .85 column_width .05],'visible','off');
+    F.htextLocal_range          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .9 column_width .03]);
+    F.htextLocal_label          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .93 column_width .03]);
+    F.htextFootprint_range      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .9 column_width .03]);
+    F.htextFootprint_label      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .93 column_width .03]);
 
-F.htextHeadline=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','HRV measures','FontWeight','bold',...
-    'FontSize',14,'Units','normalized','Position',[.05 .925 .5 .05],...
-    'FontUnits','normalized','HorizontalAlignment','left',...
-    'BackgroundColor',bgcolor_results);
-F.htextGlobal=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','global','FontWeight','bold',...
-    'FontSize',11,'Units','normalized','Position',[global_column .85 column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results);
-F.htextLocal=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','local','FontWeight','bold',...
-    'FontSize',11,'Units','normalized','Position',[local_column .85 column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results);
-F.htextFootprint=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','footprint','FontWeight','bold',...
-    'FontSize',11,'Units','normalized','Position',[footprint_column .85 column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results,'visible','off');
-F.htextLocal_range=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','','FontAngle','italic',...
-    'FontSize',8,'Units','normalized','Position',[local_column .9 column_width .03],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results);
-F.htextLocal_label=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','','FontAngle','italic',...
-    'FontSize',8,'Units','normalized','Position',[local_column .93 column_width .03],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results);
-F.htextFootprint_range=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','','FontAngle','italic',...
-    'FontSize',8,'Units','normalized','Position',[footprint_column .9 column_width .03],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results);
-F.htextFootprint_label=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','','FontAngle','italic',...
-    'FontSize',8,'Units','normalized','Position',[footprint_column .93 column_width .03],...
-    'FontUnits','normalized','HorizontalAlignment','center',...
-    'BackgroundColor',bgcolor_results);
+    F.htextLabel_rrHRV_median   = uicontrol('Parent',F.hpResults,'Style','text','String','median','Units','normalized','Position',[label_column .775 label_column_width .05]);
+    F.htextLabel_rrHRV_iqr      = uicontrol('Parent',F.hpResults,'Style','text','String','IQR','Units','normalized','Position',[label_column .725 label_column_width .05]);
+    F.htextLabel_rrHRV_shift    = uicontrol('Parent',F.hpResults,'Style','text','String','shift','Units','normalized','Position',[label_column .675 label_column_width .05]);
+    F.htextLabel_rrHRV          = uicontrol('Parent',F.hpResults,'Style','text','String','rrHRV','Units','normalized','FontWeight','bold','Position',[label_column .775 label_column_width/2 .05]);
 
+    F.htextLabel_meanrr         = uicontrol('Parent',F.hpResults,'Style','text','String','Mean RR | HR','Units','normalized','Position',[label_column .6 label_column_width .05],'TooltipString','unit: ms | bpm');
+    F.htextLabel_sdnn           = uicontrol('Parent',F.hpResults,'Style','text','String','SDNN','Units','normalized','Position',[label_column .55 label_column_width .05],'TooltipString','unit: ms');
+    F.htextLabel_rmssd          = uicontrol('Parent',F.hpResults,'Style','text','String','RMSSD','Units','normalized','Position',[label_column .5 label_column_width .05],'TooltipString','unit: ms');
+    F.htextLabel_pnn50          = uicontrol('Parent',F.hpResults,'Style','text','String','pNN50','Units','normalized','Position',[label_column .45 label_column_width .05],'TooltipString','unit: %');
+    F.htextLabel_tri            = uicontrol('Parent',F.hpResults,'Style','text','String','TRI','Units','normalized','Position',[label_column .4 label_column_width .05]);
+    F.htextLabel_tinn           = uicontrol('Parent',F.hpResults,'Style','text','String','TINN','Units','normalized','Position',[label_column .35 label_column_width .05],'TooltipString','unit: ms');
+    F.htextLabel_sd1sd2         = uicontrol('Parent',F.hpResults,'Style','text','String','SD1 | SD2','Units','normalized','Position',[label_column .3 label_column_width .05],'TooltipString','units: ms');
+    F.htextLabel_sd1sd2ratio    = uicontrol('Parent',F.hpResults,'Style','text','String','SD1/SD2 ratio','Units','normalized','Position',[label_column .25 label_column_width .05]);
+    F.htextLabel_lfhf           = uicontrol('Parent',F.hpResults,'Style','text','String','LF | HF','Units','normalized','Position',[label_column .2 label_column_width .05],'TooltipString','normalized units: %');
+    F.htextLabel_lfhfratio      = uicontrol('Parent',F.hpResults,'Style','text','String','LF/HF ratio','Units','normalized','Position',[label_column .15 label_column_width .05]);
 
+    F.htextGlobal_rrHRV_median  = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .775 column_width .05]);
+    F.htextGlobal_rrHRV_iqr     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .725 column_width .05]);
+    F.htextGlobal_rrHRV_shift   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .675 column_width .05]);
+    F.htextGlobal_meanrr        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .6 column_width .05]);
+    F.htextGlobal_sdnn          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .55 column_width .05]);
+    F.htextGlobal_rmssd         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .5 column_width .05]);
+    F.htextGlobal_pnn50         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .45 column_width .05]);
+    F.htextGlobal_tri           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .4 column_width .05]);
+    F.htextGlobal_tinn          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .35 column_width .05]);
+    F.htextGlobal_sd1sd2        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .3 column_width .05]);
+    F.htextGlobal_sd1sd2ratio   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .25 column_width .05]);
+    F.htextGlobal_lfhf          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .2 column_width .05]);
+    F.htextGlobal_lfhfratio     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .15 column_width .05]);
 
-F.htextLabel_rrHRV_median=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','median',...
-    'FontSize',10,'Units','normalized','Position',[label_column .775 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_highlight);
-F.htextLabel_rrHRV_iqr=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','IQR',...
-    'FontSize',10,'Units','normalized','Position',[label_column .725 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_highlight);
-F.htextLabel_rrHRV_shift=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','shift',...
-    'FontSize',10,'Units','normalized','Position',[label_column .675 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_highlight);
-F.htextLabel_rrHRV=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','rrHRV','FontWeight','bold',...
-    'FontSize',10,'Units','normalized','Position',[label_column .775 label_column_width/2 .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_highlight);
+    F.htextLocal_rrHRV_median   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .775 column_width .05]);
+    F.htextLocal_rrHRV_iqr      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .725 column_width .05]);
+    F.htextLocal_rrHRV_shift    = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .675 column_width .05]);
+    F.htextLocal_meanrr         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .6 column_width .05]);
+    F.htextLocal_sdnn           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .55 column_width .05]);
+    F.htextLocal_rmssd          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .5 column_width .05]);
+    F.htextLocal_pnn50          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .45 column_width .05]);
+    F.htextLocal_tri            = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .4 column_width .05]);
+    F.htextLocal_tinn           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .35 column_width .05]);
+    F.htextLocal_sd1sd2         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .3 column_width .05]);
+    F.htextLocal_sd1sd2ratio    = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .25 column_width .05]);
+    F.htextLocal_lfhf           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .2 column_width .05]);
+    F.htextLocal_lfhfratio      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .15 column_width .05]);
 
-F.htextLabel_meanrr=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','Mean RR | HR',...
-    'FontSize',10,'Units','normalized','Position',[label_column .6 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','unit: ms | bpm',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_sdnn=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','SDNN',...
-    'FontSize',10,'Units','normalized','Position',[label_column .55 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','unit: ms',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_rmssd=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','RMSSD',...
-    'FontSize',10,'Units','normalized','Position',[label_column .5 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','unit: ms',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_pnn50=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','pNN50',...
-    'FontSize',10,'Units','normalized','Position',[label_column .45 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','unit: %',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_tri=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','TRI',...
-    'FontSize',10,'Units','normalized','Position',[label_column .4 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_tinn=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','TINN',...
-    'FontSize',10,'Units','normalized','Position',[label_column .35 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','unit: ms',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_sd1sd2=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','SD1 | SD2',...
-    'FontSize',10,'Units','normalized','Position',[label_column .3 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','units: ms',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_sd1sd2ratio=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','SD1/SD2 ratio',...
-    'FontSize',10,'Units','normalized','Position',[label_column .25 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_lfhf=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','LF | HF',...
-    'FontSize',10,'Units','normalized','Position',[label_column .2 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'TooltipString','normalized units: %',...
-    'BackgroundColor',bgcolor_results);
-F.htextLabel_lfhfratio=uicontrol('Parent',F.hpResults,'Style','text',...
-    'String','LF/HF ratio',...
-    'FontSize',10,'Units','normalized','Position',[label_column .15 label_column_width .05],...
-    'FontUnits','normalized','HorizontalAlignment','right',...
-    'BackgroundColor',bgcolor_results);
-
-F.htextGlobal_rrHRV_median  =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .775 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight);
-F.htextGlobal_rrHRV_iqr     =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .725 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight);
-F.htextGlobal_rrHRV_shift   =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[global_column .675 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight);
-F.htextGlobal_meanrr        =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .6 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_sdnn          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .55 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_rmssd         =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .5 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_pnn50         =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .45 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_tri           =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .4 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_tinn          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .35 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_sd1sd2        =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[global_column .3 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_sd1sd2ratio   =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .25 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_lfhf          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[global_column .2 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextGlobal_lfhfratio     =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[global_column .15 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-
-F.htextLocal_rrHRV_median  =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .775 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight);
-F.htextLocal_rrHRV_iqr     =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .725 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight);
-F.htextLocal_rrHRV_shift   =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[local_column .675 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight);
-F.htextLocal_meanrr        =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .6 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_sdnn          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .55 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_rmssd         =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .5 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_pnn50         =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .45 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_tri           =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .4 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_tinn          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .35 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_sd1sd2        =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[local_column .3 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_sd1sd2ratio   =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .25 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_lfhf          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[local_column .2 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextLocal_lfhfratio     =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[local_column .15 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-
-F.htextFootprint_rrHRV_median  =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .775 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight,'visible','off');
-F.htextFootprint_rrHRV_iqr     =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .725 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight,'visible','off');
-F.htextFootprint_rrHRV_shift   =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[footprint_column .675 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_highlight,'visible','off');
-F.htextFootprint_meanrr        =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .6 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_sdnn          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .55 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_rmssd         =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .5 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_pnn50         =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .45 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_tri           =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .4 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_tinn          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .35 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_sd1sd2        =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[footprint_column .3 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_sd1sd2ratio   =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .25 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_lfhf          =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',9,'Units','normalized','Position',[footprint_column .2 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
-F.htextFootprint_lfhfratio     =uicontrol('Parent',F.hpResults,'Style','text','String','','FontSize',10,'Units','normalized','Position',[footprint_column .15 column_width .05],'FontUnits','normalized','HorizontalAlignment','center','BackgroundColor',bgcolor_results);
+    F.htextFootprint_rrHRV_median  = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .775 column_width .05],'visible','off');
+    F.htextFootprint_rrHRV_iqr     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .725 column_width .05],'visible','off');
+    F.htextFootprint_rrHRV_shift   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .675 column_width .05],'visible','off');
+    F.htextFootprint_meanrr        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .6 column_width .05]);
+    F.htextFootprint_sdnn          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .55 column_width .05]);
+    F.htextFootprint_rmssd         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .5 column_width .05]);
+    F.htextFootprint_pnn50         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .45 column_width .05]);
+    F.htextFootprint_tri           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .4 column_width .05]);
+    F.htextFootprint_tinn          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .35 column_width .05]);
+    F.htextFootprint_sd1sd2        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .3 column_width .05]);
+    F.htextFootprint_sd1sd2ratio   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .25 column_width .05]);
+    F.htextFootprint_lfhf          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .2 column_width .05]);
+    F.htextFootprint_lfhfratio     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .15 column_width .05]);
 
 
+% Edit fields
+    F.heditFolder = uicontrol('Parent',F.hpSubject,'Style','edit','Units','normalized','Position',[.1 0 .1 1],...
+        'Tag','Folder','String',[AppPath filesep 'data'],'TooltipString','edit the source folder',...
+        'Callback',@editFolder_Callback,'visible','off');
+    F.heditLimits = uicontrol('Parent',F.hpIntervals,'Style','edit','Units','normalized','Position',[.725 .81 .1 .1],...
+        'String','0:10','TooltipString','edit the limits',...
+        'Callback',@editLimits_Callback);  
+    F.heditLabel = uicontrol('Parent',F.hpIntervals,'Style','edit','Units','normalized','Position',[.655 .81 .065 .1],...
+        'String','','TooltipString','set up the a label for this particular time window',...
+        'Callback',@editLabel_Callback);  
+    F.heditFilter = uicontrol('Parent',F.hpIntervals,'Style','edit','Units','normalized','Position',[.925 .55 .025 .1],...
+        'String','20','TooltipString','the parameter for automated filtering',...
+        'Callback',@editFilter_Callback);  
+    F.heditSpeed = uicontrol('Parent',F.hpLocalReturnMap,'Style','edit','Units','normalized','Position',[.95 .95 .05 .05],...
+        'String','1','TooltipString','set up the speed factor for your animation (1 is real time, 2 is double speed)',...
+        'Callback',@editSpeed_Callback); 
+    F.heditMeasuresNum = uicontrol('Parent',F.hpContinuous,'Style','edit','Units','normalized','Position',[.05 .81 .025 .1],...
+        'String','60','TooltipString','the number of successive beats for which the HRV parameter will be estimated',...
+        'Callback',@editMeasuresNum_Callback);  
+    F.heditOverlap = uicontrol('Parent',F.hpContinuous,'Style','edit','Units','normalized','Position',[.075 .81 .035 .1],...
+        'String','0.75','TooltipString','the overlap parameter',...
+        'Callback',@editOverlap_Callback);  
 
-%Edit fields
-F.heditFolder = uicontrol('Parent',F.hpSubject,'Style','edit',...
-    'Units','normalized','Position',[.1 0 .1 1],'FontUnits','normalized',...
-    'Tag','Folder','String',[AppPath filesep 'data'],'TooltipString','edit the source folder',...
-    'Callback',@editFolder_Callback,'visible','off');
-F.heditLimits = uicontrol('Parent',F.hpIntervals,'Style','edit',...
-    'Units','normalized','Position',[.725 .81 .1 .1],'FontUnits','normalized',...
-    'String','0:10','TooltipString','edit the limits',...
-    'Callback',@editLimits_Callback);  
-F.heditLabel = uicontrol('Parent',F.hpIntervals,'Style','edit',...
-    'Units','normalized','Position',[.655 .81 .065 .1],'FontUnits','normalized',...
-    'String','','TooltipString','set up the a label for this particular time window',...
-    'Callback',@editLabel_Callback);  
-F.heditFilter = uicontrol('Parent',F.hpIntervals,'Style','edit',...
-    'Units','normalized','Position',[.925 .45 .025 .1],'FontUnits','normalized',...
-    'String','20','TooltipString','the parameter for automated filtering',...
-    'Callback',@editFilter_Callback);  
-F.heditSpeed = uicontrol('Parent',F.hpLocalReturnMap,'Style','edit',...
-    'Units','normalized','Position',[.95 .95 .05 .05],'FontUnits','normalized',...
-    'String','1','TooltipString','set up the speed factor for your animation (1 is real time, 2 is double speed)',...
-    'Callback',@editSpeed_Callback); 
-F.heditMeasuresNum = uicontrol('Parent',F.hpContinuous,'Style','edit',...
-    'Units','normalized','Position',[.05 .81 .025 .1],'FontUnits','normalized',...
-    'String','60','TooltipString','the number of successive beats for which the HRV parameter will be estimated',...
-    'Callback',@editMeasuresNum_Callback);  
-F.heditOverlap = uicontrol('Parent',F.hpContinuous,'Style','edit',...
-    'Units','normalized','Position',[.075 .81 .025 .1],'FontUnits','normalized',...
-    'String','0.75','TooltipString','the overlap parameter',...
-    'Callback',@editOverlap_Callback);  
+% Popup
+    F.hpopupSubject = uicontrol('Parent',F.hpSubject,'Style','popup','Units','normalized','Position',[0 0 .15 1],'Tag','Subject','String','','Callback',@popupSubject_Callback);  
 
-%Popup
-F.hpopupSubject = uicontrol('Parent',F.hpSubject,'Style','popup',...
-    'Units','normalized','Position',[0 0 .15 1],'FontUnits','normalized',...
-    'Tag','Subject','String','','Callback',@popupSubject_Callback);  
+% Buttons
+    F.hbuttonFolder     = uicontrol('Parent',F.hpSubject,'String','cd','Units','normalized','Position',[0.075 0 .025 1],'TooltipString','Change directory','visible','off','Callback', @buttonCD_Callback);
+    F.hbuttonFontChange = uicontrol('Parent',F.hpSubject,'String','font change','Units','normalized','Position',[0 0 .075 1],'TooltipString','Font selection','visible','off','Callback', @buttonFontChange_Callback);
+    F.hbuttonTitle      = uicontrol('Parent',F.hpSubject,'String','T','Units','normalized','Position',[.3 0 .015 1],'TooltipString','Change title','visible','off','Callback', @buttonTitle_Callback);
 
-%Buttons
-F.hbuttonFolder = uicontrol('Parent',F.hpSubject,'String','cd',...
-    'FontSize',9,'Units','normalized','Position',[0.075 0 .025 1],...
-    'TooltipString','Change directory',...
-    'FontUnits','normalized','Callback', @buttonCD_Callback,'visible','off');
-F.hbuttonFontChange = uicontrol('Parent',F.hpSubject,'String','font change',...
-    'FontSize',9,'Units','normalized','Position',[0 0 .075 1],...
-    'TooltipString','Font selection',...
-    'FontUnits','normalized','Callback', @buttonFontChange_Callback,'visible','off');
-F.hbuttonTitle = uicontrol('Parent',F.hpSubject,'String','T',...
-    'FontSize',9,'Units','normalized','Position',[.3 0 .015 1],...
-    'FontUnits','normalized','TooltipString','Change title',...
-    'Callback', @buttonTitle_Callback,'visible','off');
+    F.hbuttonIntervalNext2     = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.85 .81 .025 .1],'TooltipString','Move forward','Callback', @buttonIntervalNext2_Callback);
+    F.hbuttonIntervalNext      = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.825 .81 .025 .1],'TooltipString','Move forward','Callback', @buttonIntervalNext_Callback);
+    F.hbuttonIntervalPrevious  = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.075 .81 .025 .1],'TooltipString','Move backwards','Callback', @buttonIntervalPrevious_Callback);
+    F.hbuttonIntervalPrevious2 = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.05 .81 .025 .1],'TooltipString','Move backwards','Callback', @buttonIntervalPrevious2_Callback);
+    F.hbuttonNormalize         = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.025 .81 .025 .1],'visible','off','TooltipString','Normalize y-axis','Callback', @buttonNormalize_Callback);
+    F.hbuttonShowWaveform      = uicontrol('Parent',F.hpIntervals,'String','Waveform','Units','normalized','Position',[.9 .85 .075 .1],'visible','off','Callback', @buttonShowWaveform_Callback);
+    F.hbuttonShowBeats         = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.9 .75 .075/3 .1],'TooltipString','Show/hide heart beats','visible','off','Callback', @buttonShowBeats_Callback);
+    F.hbuttonShowIntervals     = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.9+1*.075/3 .75 .075/3 .1],'TooltipString','Show/hide RR intervals','Callback', @buttonShowIntervals_Callback);
+    F.hbuttonShowProportions   = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.9+2*.075/3 .75 .075/3 .1],'TooltipString','Show/hide relative RR intervals','Callback', @buttonShowProportions_Callback);
+    F.hbuttonFilterDecrease    = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.9 .55 .025 .1],'TooltipString','More artifact filtering','Callback', @buttonFilterDecrease_Callback);
+    F.hbuttonFilterIncrease    = uicontrol('Parent',F.hpIntervals,'String','','Units','normalized','Position',[.95 .55 .025 .1],'TooltipString','Less artifact filtering','Callback', @buttonFilterIncrease_Callback);
+    F.hbuttonIgnoreBeat        = uicontrol('Parent',F.hpIntervals,'String','Ignore beat','Units','normalized','Position',[.9 .4 .075 .1],'TooltipString','Select multiple beats and confirm with a double click','Callback', @buttonIgnoreBeat_Callback);
+    F.hbuttonRemoveBeat        = uicontrol('Parent',F.hpIntervals,'String','Remove','Units','normalized','Position',[.9 .3 .0375 .1],'TooltipString','Select multiple beats and confirm with a double click','Callback', @buttonRemoveBeat_Callback);
+    F.hbuttonAddBeat           = uicontrol('Parent',F.hpIntervals,'String','Add','Units','normalized','Position',[.9 .2 .0375 .1],'TooltipString','Select multiple beats and confirm with a double click','Callback', @buttonAddBeat_Callback);
+    F.hbuttonAlignPosPeak      = uicontrol('Parent',F.hpIntervals,'Units','normalized','Position',[.9375 .3 .0375/2 .1],'TooltipString','Align beat locations in the current window to the positive peak','visible','off','Callback', @buttonAlignPosPeak_Callback);
+    F.hbuttonAlignNegPeak      = uicontrol('Parent',F.hpIntervals,'Units','normalized','Position',[.9375 .2 .0375/2 .1],'TooltipString','Align beat locations in the current window to the negative peak','visible','off','Callback', @buttonAlignNegPeak_Callback);
+    F.hbuttonAlignAllPosPeak   = uicontrol('Parent',F.hpIntervals,'Units','normalized','Position',[.9375+.0375/2 .3 .0375/2 .1],'TooltipString','Align beat locations of the entire time series to the positive peak','visible','off','Callback', @buttonAlignAllPosPeak_Callback);
+    F.hbuttonAlignAllNegPeak   = uicontrol('Parent',F.hpIntervals,'Units','normalized','Position',[.9375+.0375/2 .2 .0375/2 .1],'TooltipString','Align beat locations of the entire time series to the negative peak','visible','off','Callback', @buttonAlignAllNegPeak_Callback);
+    F.hbuttonSaveAnnotations   = uicontrol('Parent',F.hpIntervals,'String','Save annotations','Units','normalized','Position',[.9 .1 .075 .1],'TooltipString','Save Annotations','Callback', @buttonSaveAnnotations_Callback);
+    F.hbuttonRemoveArtifact2   = uicontrol('Parent',F.hpContinuous,'String','','Units','normalized','Position',[.9575 .81 .0175 .1],'TooltipString','Remove artifact','Callback', @buttonRemoveArtifact2_Callback);
+    F.hbuttonPicker            = uicontrol('Parent',F.hpContinuous,'String','','Units','normalized','Position',[.94 .81 .0175 .1],'TooltipString','Show corresponding intervals','Callback', @buttonPicker_Callback);
+    F.hbuttonReturnMapType     = uicontrol('Parent',F.hpLocalReturnMap,'String','RR<>rr','Units','normalized','Position',[0 .95 .125 .05],'TooltipString','Switch absolute/relative view','Callback', @buttonReturnMapType_Callback);
+    F.hbuttonNumbers           = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.125 .95 .05 .05],'TooltipString','Show coordinate numbers','Callback', @buttonNumbers_Callback);
+    F.hbuttonFootprint         = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.175 .95 .05 .05],'Callback', @buttonFootprint_Callback);
+    F.hbuttonPDF               = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.225 .95 .05 .05],'TooltipString','Show probablity density function of rrHRV','Callback', @buttonPDF_Callback);
+    F.hbuttonAnimation         = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.9 .95 .05 .05],'TooltipString','Show animation of beat variation', 'Callback', @buttonAnimation_Callback);
+    F.hbuttonMarkerIncrease    = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.275 .95 .05 .05],'TooltipString','Increase marker size','Callback', @buttonMarkerIncrease_Callback);
+    F.hbuttonMarkerDecrease    = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.325 .95 .05 .05],'TooltipString','Decrease marker size','Callback', @buttonMarkerDecrease_Callback);
+    F.hbuttonLineType          = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.375 .95 .05 .05],'TooltipString','Change line type','Callback', @buttonLineType_Callback);
+    F.hbuttonDetail            = uicontrol('Parent',F.hpLocalReturnMap,'String','','Units','normalized','Position',[.425 .95 .05 .05],'TooltipString','Resize','Callback', @buttonDetail_Callback);
 
-F.hbuttonIntervalNext2 = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.85 .81 .025 .1],...
-    'TooltipString','Move forward','CData',[icons.android_arrow_forward(:,4:12,:) icons.android_arrow_forward(:,5:13,:)],...
-    'FontUnits','normalized','Callback', @buttonIntervalNext2_Callback);
-F.hbuttonIntervalNext = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.825 .81 .025 .1],...
-    'TooltipString','Move forward','CData',icons.android_arrow_forward,...
-    'FontUnits','normalized','Callback', @buttonIntervalNext_Callback);
-F.hbuttonIntervalPrevious = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.075 .81 .025 .1],...
-    'TooltipString','Move backwards','CData',icons.android_arrow_back,...
-    'FontUnits','normalized','Callback', @buttonIntervalPrevious_Callback);
-F.hbuttonIntervalPrevious2 = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.05 .81 .025 .1],...
-    'TooltipString','Move backwards','CData',[icons.android_arrow_back(:,4:12,:) icons.android_arrow_back(:,5:13,:)],...
-    'FontUnits','normalized','Callback', @buttonIntervalPrevious2_Callback);
-F.hbuttonShowWaveform = uicontrol('Parent',F.hpIntervals,'String','Waveform',...
-    'FontSize',9,'Units','normalized','Position',[.9 .85 .075 .1],'visible','off',...
-    'FontUnits','normalized','Callback', @buttonShowWaveform_Callback);
-F.hbuttonShowIntervals = uicontrol('Parent',F.hpIntervals,'String','Intervals',...
-    'FontSize',9,'Units','normalized','Position',[.9 .75 .075 .1],...
-    'FontUnits','normalized','Callback', @buttonShowIntervals_Callback);
-F.hbuttonShowProportions = uicontrol('Parent',F.hpIntervals,'String','Proportions',...
-    'FontSize',9,'Units','normalized','Position',[.9 .65 .075 .1],...
-    'FontUnits','normalized','Callback', @buttonShowProportions_Callback);
-F.hbuttonFilterDecrease = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.9 .45 .025 .1],...
-    'TooltipString','More artifact filtering','CData',icons.minus_round,...
-    'FontUnits','normalized','Callback', @buttonFilterDecrease_Callback);
-F.hbuttonFilterIncrease = uicontrol('Parent',F.hpIntervals,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.95 .45 .025 .1],...
-    'TooltipString','Less artifact filtering','CData',icons.plus_round,...
-    'FontUnits','normalized','Callback', @buttonFilterIncrease_Callback);
-F.hbuttonIgnoreBeat = uicontrol('Parent',F.hpIntervals,'String','Ignore beat',...
-    'FontSize',9,'Units','normalized','Position',[.9 .3 .075 .1],...
-    'FontUnits','normalized','TooltipString','Select multiple beats and confirm with a double click',...
-    'Callback', @buttonIgnoreBeat_Callback);
-F.hbuttonRemoveBeat = uicontrol('Parent',F.hpIntervals,'String','Remove',...
-    'FontSize',9,'Units','normalized','Position',[.9 .2 .0375 .1],...
-    'FontUnits','normalized','TooltipString','Select multiple beats and confirm with a double click',...
-    'Callback', @buttonRemoveBeat_Callback);
-F.hbuttonAddBeat = uicontrol('Parent',F.hpIntervals,'String','Add',...
-    'FontSize',9,'Units','normalized','Position',[.9375 .2 .0375 .1],...
-    'FontUnits','normalized','TooltipString','Select multiple beats and confirm with a double click',...
-    'Callback', @buttonAddBeat_Callback);
-F.hbuttonSaveAnnotations = uicontrol('Parent',F.hpIntervals,'String','Save annotations',...
-    'FontSize',9,'Units','normalized','Position',[.9 .1 .075 .1],...
-    'FontUnits','normalized','TooltipString','Save Annotations',...
-    'Callback', @buttonSaveAnnotations_Callback);
-F.hbuttonRemoveArtifact2 = uicontrol('Parent',F.hpContinuous,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.9575 .81 .0175 .1],...
-    'TooltipString','Remove artifact','CData',icons.ios7_close,...
-    'FontUnits','normalized','Callback', @buttonRemoveArtifact2_Callback);
-F.hbuttonPicker = uicontrol('Parent',F.hpContinuous,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.94 .81 .0175 .1],...
-    'FontUnits','normalized','TooltipString','Show corresponding intervals','CData',icons.pin,...
-    'Callback', @buttonPicker_Callback);
+    F.hbuttonTachogramType           = uicontrol('Parent',F.hpSpectrum,'String','global<>local','Units','normalized','Position',[0 .95 .25 .05],'TooltipString','Change local/global tachogram analysis','Callback', @buttonTachogramType_Callback);
+    F.hbuttonContinuousVisibility    = uicontrol('Parent',F.hpContinuous,'String','visibility on/off','Units','normalized','Position',[.675 .81 .075 .1],'TooltipString','Change visibility of continuous HRV paramater','Callback', @buttonContinuousVisibility_Callback);
+    F.hbuttonContinuousLFHF          = uicontrol('Parent',F.hpContinuous,'String','LFHF','Units','normalized','Position',[.615 .81 .03 .1],'TooltipString','Compute LF/HF ratio','Callback', @buttonContinuousLFHF_Callback);
+    F.hbuttonContinuousTINN          = uicontrol('Parent',F.hpContinuous,'String','TINN','Units','normalized','Position',[.645 .81 .03 .1],'TooltipString','Compute TINN','Callback', @buttonContinuousTINN_Callback);
+    F.hbuttonContinuousRecalculation = uicontrol('Parent',F.hpContinuous,'String','Recalculation','Units','normalized','Position',[.3 .4 .1 .15],'visible','off','Callback', @editMeasuresNum_Callback);
+    F.hbuttonPickerSection           = uicontrol('Parent',F.hpContinuous,'String','','Units','normalized','Position',[.11 .81 .02 .1],'TooltipString','Show section','Callback', @buttonPickerSection_Callback);
+
+    F.hbuttonSaveAs = uicontrol('Parent',F.hpResults,'String','save as','Units','normalized','Position',[.85 0 .15 .05],'TooltipString','save as png, pdf, csv or mat-file','visible','off','Callback', @buttonSaveAs_Callback);
+    F.hbuttonCopy   = uicontrol('Parent',F.hpResults,'String','copy','Units','normalized','Position',[.7 0 .15 .05],'TooltipString','copy to clipboard','visible','off','Callback', @buttonCopy_Callback);
 
 
-F.hbuttonReturnMapType = uicontrol('Parent',F.hpLocalReturnMap,'String','RR<>rr',...
-    'FontSize',9,'Units','normalized','Position',[0 .95 .125 .05],...
-    'FontUnits','normalized','TooltipString','Switch absolute/relative view',...
-    'Callback', @buttonReturnMapType_Callback);
-F.hbuttonNumbers = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.125 .95 .05 .05],...
-    'FontUnits','normalized','TooltipString','Show coordinate numbers','CData',icons.ios7_information,...
-    'Callback', @buttonNumbers_Callback);
-F.hbuttonFootprint = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.175 .95 .05 .05],'CData',icons.ios7_paw,...
-    'FontUnits','normalized','Callback', @buttonFootprint_Callback);
-F.hbuttonPDF = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.225 .95 .05 .05],'CData',icons.android_image,...
-    'FontUnits','normalized','TooltipString','Show probablity density function of rrHRV',...
-    'Callback', @buttonPDF_Callback);
-F.hbuttonAnimation = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.9 .95 .05 .05],'CData',icons.social_youtube,...
-    'FontUnits','normalized','TooltipString','Show animation of beat variation',...
-    'Callback', @buttonAnimation_Callback);
-F.hbuttonMarkerIncrease = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.275 .95 .05 .05],...
-    'FontUnits','normalized','TooltipString','Increase marker size','CData',icons.plus_circled,...
-    'Callback', @buttonMarkerIncrease_Callback);
-F.hbuttonMarkerDecrease = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.325 .95 .05 .05],...
-    'FontUnits','normalized','TooltipString','Decrease marker size','CData',icons.minus_circled,...
-    'Callback', @buttonMarkerDecrease_Callback);
-F.hbuttonLineType = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.375 .95 .05 .05],...
-    'FontUnits','normalized','TooltipString','Change line type','CData',icons.android_more,...
-    'Callback', @buttonLineType_Callback);
-F.hbuttonDetail = uicontrol('Parent',F.hpLocalReturnMap,'String','',...
-    'FontSize',9,'Units','normalized','Position',[.425 .95 .05 .05],...
-    'FontUnits','normalized','TooltipString','Resize','CData',icons.arrow_resize,...
-    'Callback', @buttonDetail_Callback);
-
-
-F.hbuttonTachogramType = uicontrol('Parent',F.hpSpectrum,'String','global<>local',...
-    'FontSize',9,'Units','normalized','Position',[0 .95 .25 .05],...
-    'FontUnits','normalized','TooltipString','Change local/global tachogram analysis',...
-    'Callback', @buttonTachogramType_Callback);
-
-
-F.hbuttonContinuousVisibility = uicontrol('Parent',F.hpContinuous,'String','visibility on/off',...
-    'FontSize',9,'Units','normalized','Position',[.675 .81 .075 .1],...
-    'FontUnits','normalized','TooltipString','Change visibility of continuous HRV paramater',...
-    'Callback', @buttonContinuousVisibility_Callback);
-F.hbuttonContinuousLFHF = uicontrol('Parent',F.hpContinuous,'String','LFHF',...
-    'FontSize',9,'Units','normalized','Position',[.615 .81 .03 .1],...
-    'FontUnits','normalized','TooltipString','Compute LF/HF ratio',...
-    'Callback', @buttonContinuousLFHF_Callback);
-F.hbuttonContinuousTINN = uicontrol('Parent',F.hpContinuous,'String','TINN',...
-    'FontSize',9,'Units','normalized','Position',[.645 .81 .03 .1],...
-    'FontUnits','normalized','TooltipString','Compute TINN',...
-    'Callback', @buttonContinuousTINN_Callback);
-F.hbuttonContinuousRecalculation = uicontrol('Parent',F.hpContinuous,...
-    'String','Recalculation','FontSize',12,...
-    'Units','normalized','Position',[.3 .4 .1 .15],'FontUnits','normalized',...
-    'Callback', @editMeasuresNum_Callback,'visible','off');
-F.hbuttonPickerSection = uicontrol('Parent',F.hpContinuous,'String','',...
-    'FontSize',12,'Units','normalized','Position',[.1 .81 .02 .1],...
-    'FontUnits','normalized','TooltipString','Show section','CData',icons.pin,...
-    'Callback', @buttonPickerSection_Callback);
-
-F.hbuttonSaveAs = uicontrol('Parent',F.hpResults,'String','save as',...
-    'FontSize',9,'Units','normalized','Position',[.85 0 .15 .05],...
-    'FontUnits','normalized','TooltipString','save as png, pdf, csv or mat-file',...
-    'Callback', @buttonSaveAs_Callback,'visible','off');
-F.hbuttonCopy = uicontrol('Parent',F.hpResults,'String','copy',...
-    'FontSize',9,'Units','normalized','Position',[.7 0 .15 .05],...
-    'FontUnits','normalized','TooltipString','copy to clipboard',...
-    'Callback', @buttonCopy_Callback,'visible','off');
-
-
-
-%Axes
-F.ha1 = axes('Parent',F.hpIntervals,'Position',[.05 .15 .825 .65],...
-    'Units','normalized','FontUnits','normalized','Layer','top','visible','off'); 
-F.ha2 = axes('Parent',F.hpLocalReturnMap,'Position',[.15 .125 .8 .725],...
-    'Units','normalized','FontUnits','normalized','Layer','top','visible','on'); 
-F.ha2b = axes('Parent',F.hpLocalReturnMap,'Position',[.025 .025 .4 .15],...
-    'Units','normalized','FontUnits','normalized','visible','off'); 
-F.ha3 = axes('Parent',F.hpSpectrum,'Position',[.15 .65 .8 .25],...
-    'Units','normalized','FontUnits','normalized','Layer','top','visible','on'); 
-F.ha4 = axes('Parent',F.hpSpectrum,'Position',[.15 .125 .8 .35],...
-    'Units','normalized','FontUnits','normalized','Layer','top','visible','on'); 
-F.ha5 = axes('Parent',F.hpContinuous,'Position',[.05 .15 .7 .65],...
-    'Units','normalized','FontUnits','normalized','Layer','top','visible','on'); 
-F.ha6 = axes('Parent',F.hpContinuous,'Position',[.8 .15 .175 .65],...
-    'Units','normalized','FontUnits','normalized','Layer','top','visible','on'); 
+% Axes
+    F.ha1  = axes('Parent',F.hpIntervals,'Position',[.05 .15 .825 .65],'Units','normalized','Layer','top','visible','off'); 
+    F.ha2  = axes('Parent',F.hpLocalReturnMap,'Position',[.15 .125 .8 .725],'Units','normalized','Layer','top','visible','on'); 
+    F.ha2b = axes('Parent',F.hpLocalReturnMap,'Position',[.025 .025 .4 .15],'Units','normalized','visible','off'); 
+    F.ha3  = axes('Parent',F.hpSpectrum,'Position',[.15 .65 .8 .25],'Units','normalized','Layer','top','visible','on'); 
+    F.ha4  = axes('Parent',F.hpSpectrum,'Position',[.15 .125 .8 .35],'Units','normalized','Layer','top','visible','on'); 
+    F.ha5  = axes('Parent',F.hpContinuous,'Position',[.05 .15 .7 .65],'Units','normalized','Layer','top','visible','on'); 
+    F.ha6  = axes('Parent',F.hpContinuous,'Position',[.8 .15 .175 .65],'Units','normalized','Layer','top','visible','on'); 
 
 
 % Initialize the GUI.
-set(F.fh,'Name','Analysis of Heart Rate Variability')
-movegui(F.fh,'center')
-set(F.fh,'Visible','on');
+    set(F.fh,'Name','Analysis of Heart Rate Variability')
+    set(F.fh,'Color',clr.background)
+    movegui(F.fh,'center')
+    set(F.fh,'Visible','on');
 
 
 % Global Variables
-global always LocalRange FootprintRange HRVTool_version HRVTool_version_date Position font_set my_title;
+global always LocalRange FootprintRange Position my_title;
 global sig sig_waveform unit name name_org Fs Ann Ann_complete Ann_type imported;
 global d_fs Beat_min Beat_max wl_tma wl_we;
 global RR RRorg RRfilt center relRR relRR_pct RR_loc rr_loc;
-global showWaveform showIntervals showProportions RMtype RMnumbers showFootprint showPDF RMmarkersize;
+global showWaveform showBeats showIntervals showProportions RMtype RMnumbers showFootprint showPDF RMmarkersize;
 global filter_limit my_artifacts;
 global signal_num MeasuresNum HfNum Overlap legendpos hAx hLine1 hLine2 vis showTINN showLFHF;
-global HRV_rr_med HRV_rr_iqr HRV_rr_shift HRV_hf HRV_rmssd HRV_sdnn...
-    HRV_sdsd HRV_pnn50 HRV_tri HRV_tinn HRV_sd1sd2ratio HRV_lfhfratio;
+global HRV_rr_med HRV_rr_iqr HRV_rr_shift HRV_hf HRV_rmssd HRV_sdnn HRV_sdsd HRV_pnn50 HRV_tri HRV_tinn HRV_sd1sd2ratio HRV_lfhfratio;
 global HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio;
 global HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio;
 global HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio;
@@ -472,8 +261,6 @@ global S;
 global FileName PathName;
 global label_lim label_names;
 
-HRVTool_version = 1.02;
-HRVTool_version_date = '22 November 2018';
 Position = [0,0,40/3,75/8];
 set(F.htextAuthor,'String',['HRVTool ' num2str(HRVTool_version,'%1.2f') ' | marcus.vollmer@uni-greifswald.de'])
 
@@ -482,6 +269,7 @@ fp_RR = []; fp_rr = [];
 S = [];
 my_title = {''};
 showWaveform = false;
+showBeats = false;
 showIntervals = false;
 showProportions = false;
 showFootprint = false;
@@ -505,89 +293,64 @@ my_artifacts = [];
 label_lim =[];
 label_names = {};
 
-if exist([cd filesep 'font_setting.mat'],'file')>0
-    load('font_setting.mat')
-    names = fieldnames(F);
-    for i=2:length(names)
-        set(F.(names{i}),font_set);
+
+% Toolbar
+    F.fh.MenuBar = 'figure';  % Display the standard toolbar
+    F.htoolbar = findall(F.fh,'tag','FigureToolBar');
+    % get(findall(F.htoolbar),'tag') % Tags of standard toolbar
+
+    tb_exclusion = {'Standard.NewFigure','Standard.EditPlot','Exploration.Rotate',...
+        'Plottools.PlottoolsOn','Plottools.PlottoolsOff','Annotation.InsertLegend',...
+        'Annotation.InsertColorbar','DataManager.Linking'};
+    for i=1:length(tb_exclusion)
+        set(findall(F.htoolbar,'tag',tb_exclusion{i}),'visible','off','Separator','off');
     end
-end
 
+    set(findall(F.htoolbar,'tag','Standard.FileOpen'),'ClickedCallback',@buttonCD_Callback);
+    set(findall(F.htoolbar,'tag','Standard.SaveFigure'),'ClickedCallback',@save_settings,'TooltipString','Save settings');
 
-%Toolbar
-F.fh.MenuBar = 'figure';  % Display the standard toolbar
-F.htoolbar = findall(F.fh,'tag','FigureToolBar');
-% get(findall(F.htoolbar),'tag') % Tags of standard toolbar
-
-tb_exclusion = {'Standard.NewFigure','Standard.EditPlot','Exploration.Rotate',...
-    'Plottools.PlottoolsOn','Plottools.PlottoolsOff','Annotation.InsertLegend',...
-    'Annotation.InsertColorbar','DataManager.Linking'};
-for i=1:length(tb_exclusion)
-    set(findall(F.htoolbar,'tag',tb_exclusion{i}),'visible','off','Separator','off');
-end
-set(findall(F.htoolbar,'tag','Standard.FileOpen'),'ClickedCallback',@buttonCD_Callback,'CData',icons.android_folder);
-set(findall(F.htoolbar,'tag','Standard.SaveFigure'),'ClickedCallback',@save_settings,'TooltipString','Save settings','CData',icons.archive);
-set(findall(F.htoolbar,'tag','Standard.PrintFigure'),'CData',icons.android_printer);
-set(findall(F.htoolbar,'tag','Exploration.ZoomIn'),'CData',icons.android_search_plus);
-set(findall(F.htoolbar,'tag','Exploration.ZoomOut'),'CData',icons.android_search_minus);
-set(findall(F.htoolbar,'tag','Exploration.Pan'),'CData',icons.android_hand);
-set(findall(F.htoolbar,'tag','Exploration.DataCursor'),'CData',icons.android_locate);
-set(findall(F.htoolbar,'tag','Exploration.Brushing'),'CData',icons.wand);
-
-F.htoolbarCopy = uitoggletool(F.htoolbar,'CData',icons.clipboard,...
-            'Separator','on','TooltipString','Copy to clipboard','Tag','HRV.Copy',...
-            'HandleVisibility','off','ClickedCallback',@buttonCopy_Callback);
-F.htoolbarFont = uitoggletool(F.htoolbar,'CData',icons.android_mixer,...
-            'Separator','on','TooltipString','Font selection','Tag','HRV.Font',...
-            'HandleVisibility','off','ClickedCallback',@buttonFontChange_Callback);
-F.htoolbarTitle = uitoggletool(F.htoolbar,'CData',icons.android_promotion,...
-            'Separator','on','TooltipString','Change title','Tag','HRV.Title',...
-            'HandleVisibility','off','ClickedCallback',@buttonTitle_Callback);
+    F.htoolbarCopy = uitoggletool(F.htoolbar,'Separator','on','TooltipString','Copy to clipboard','Tag','HRV.Copy',...
+                'HandleVisibility','off','ClickedCallback',@buttonCopy_Callback);
+    F.htoolbarFont = uitoggletool(F.htoolbar,'Separator','on','TooltipString','Font selection','Tag','HRV.Font',...
+                'HandleVisibility','off','ClickedCallback',@buttonFontChange_Callback);
+    F.htoolbarDisplay = uitoggletool(F.htoolbar,'TooltipString','Color mode selection','Tag','HRV.Colors',...
+                'HandleVisibility','off','ClickedCallback',@buttonDisplayChange_Callback);     
+    F.htoolbarTitle = uitoggletool(F.htoolbar,'Separator','on','TooltipString','Change title','Tag','HRV.Title',...
+                'HandleVisibility','off','ClickedCallback',@buttonTitle_Callback);
         
-%Menubar
-F.hmenu = findall(F.fh,'tag','figMenu');
-% get(findall(F.fh,'type','uimenu'),'tag')
+% Menubar
+    F.hmenu = findall(F.fh,'tag','figMenu');
+    % get(findall(F.fh,'type','uimenu'),'tag')
  
-menu_exclusion = {'figMenuWindow','figMenuDesktop','figMenuTools',...
-    'figMenuInsert','figMenuView','figMenuEdit','figMenuHelp',...
-    'figMenuFileExportSetup','figMenuFilePreferences',...
-    'figMenuFileSaveWorkspaceAs','figMenuUpdateFileNew',...
-    'figMenuFileImportData','figMenuGenerateCode'};
-for i=1:length(menu_exclusion)
-    set(findall(F.fh,'tag',menu_exclusion{i}),'visible','off','Separator','off');
-end
-
-%     'figMenuFileExitMatlab'
-%     'figMenuFilePrintPreview'
-%     'figMenuFileClose'     
-
-F.hmenuFile = findall(F.fh,'tag','figMenuFile');
-% F.hmenuOpen = uimenu(F.hmenuFile,'Label','Open','Position',3);
-
-F.hmenuSaveAs  = findall(F.hmenuFile,'tag','figMenuFileSaveAs');
-set(F.hmenuSaveAs,'Callback',@buttonSaveAs_Callback);
-F.hmenuSave  = findall(F.hmenuFile,'tag','figMenuFileSave');
-set(F.hmenuSave,'Callback',@save_settings);
-
-F.hmenuCopy = uimenu(F.hmenuFile,'Label','Copy to clipboard','Callback',@buttonCopy_Callback,'Accelerator','C','Position',5);
+    menu_exclusion = {'figMenuWindow','figMenuDesktop','figMenuTools',...
+        'figMenuInsert','figMenuView','figMenuEdit','figMenuHelp',...
+        'figMenuFileExportSetup','figMenuFilePreferences',...
+        'figMenuFileSaveWorkspaceAs','figMenuUpdateFileNew',...
+        'figMenuFileImportData','figMenuGenerateCode'};
+    for i=1:length(menu_exclusion)
+        set(findall(F.fh,'tag',menu_exclusion{i}),'visible','off','Separator','off');
+    end
 
 
-F.hmenuHelp = uimenu(F.fh,'Label','&Help');
-F.hmenuTutorial = uimenu(F.hmenuHelp,'Label','Go to tutorial','Callback',@MenuTutorial);
-F.hmenuWebManual = uimenu(F.hmenuHelp,'Label','Get help on website','Callback',@MenuWebsite,'Accelerator','H');
-F.hmenuTerms = uimenu(F.hmenuHelp,'Label','Terms of use','Callback',@MenuTerms);
-F.hmenuInfo = uimenu(F.hmenuHelp,'Label','Info','Callback',@MenuInfo,'Accelerator','I','Separator','on');
+    F.hmenuFile = findall(F.fh,'tag','figMenuFile');
+    % F.hmenuOpen = uimenu(F.hmenuFile,'Label','Open','Position',3);
 
-% F.hmenueh1 = uimenu(F.hmenu,'Label','Item 1');
-% F.hmenueh2 = uimenu(F.hmenu,'Label','Item 2','Checked','on');
-% F.hmenuseh1 = uimenu(F.hmenueh1,'Label','Choice 1','Accelerator','C','Enable','off');
-% F.hmenuseh2 = uimenu(F.hmenueh1,'Label','Choice 2','Accelerator','H');
-% 
+    F.hmenuSaveAs  = findall(F.hmenuFile,'tag','figMenuFileSaveAs');
+    set(F.hmenuSaveAs,'Callback',@buttonSaveAs_Callback);
+    F.hmenuSave  = findall(F.hmenuFile,'tag','figMenuFileSave');
+    set(F.hmenuSave,'Callback',@save_settings);
 
+    F.hmenuCopy = uimenu(F.hmenuFile,'Label','Copy to clipboard','Callback',@buttonCopy_Callback,'Accelerator','C','Position',5);
+    F.hmenuHelp = uimenu(F.fh,'Label','&Help');
+    F.hmenuTutorial = uimenu(F.hmenuHelp,'Label','Go to tutorial','Callback',@MenuTutorial);
+    F.hmenuWebManual = uimenu(F.hmenuHelp,'Label','Get help on website','Callback',@MenuWebsite,'Accelerator','H');
+    F.hmenuTerms = uimenu(F.hmenuHelp,'Label','Terms of use','Callback',@MenuTerms);
+    F.hmenuInfo = uimenu(F.hmenuHelp,'Label','Info','Callback',@MenuInfo,'Accelerator','I','Separator','on');
 
-
+    
 if exist([AppPath filesep 'HRV_settings.m'],'file')<=0
     create_HRV_settings
+    set_colors
 end
 if exist([AppPath filesep 'HRV_settings.m'],'file')>0    
     HRV_settings
@@ -599,7 +362,25 @@ if exist([AppPath filesep 'HRV_settings.m'],'file')>0
     set(F.hpopupSubject,'Value',find(ismember(get(F.hpopupSubject,'String'),FileName)));
     set(F.fh,'Position',Position)
     
-    buttonStart_Callback    
+  % Load color scheme
+    switch colormode
+        case 'light'
+            load('clr_light.mat')
+        case 'dark'
+            load('clr_dark.mat')
+            load('icons_inverse.mat')
+        case 'user'
+            load('clr_user.mat')
+        otherwise
+            load('clr_dark.mat')
+    end
+    
+  % update colors
+    calc_on
+    set(F.fh,'Color',clr.background)
+    set_colors
+        
+    buttonStart_Callback
 end
 
 
@@ -630,7 +411,14 @@ function buttonStart_Callback(hObject, eventdata, handles)
     showFootprint = false;
     showTINN = false; set(F.hbuttonContinuousTINN,'visible','on');
     showLFHF = false; set(F.hbuttonContinuousLFHF,'visible','on');
-    showWaveform = false; set(F.hbuttonShowWaveform,'visible','off');
+    showWaveform = false;
+    set(F.hbuttonNormalize,'visible','off');
+    set(F.hbuttonShowWaveform,'visible','off');
+    set(F.hbuttonShowBeats,'visible','off');
+    set(F.hbuttonAlignPosPeak,'visible','off');
+    set(F.hbuttonAlignNegPeak,'visible','off');
+    set(F.hbuttonAlignAllPosPeak,'visible','off');
+    set(F.hbuttonAlignAllNegPeak,'visible','off');
     set(F.hbuttonContinuousRecalculation,'visible','off');
     set(F.heditLabel,'String','')
     set(F.heditLimits,'String','0:10')
@@ -813,17 +601,17 @@ function buttonStart_Callback(hObject, eventdata, handles)
             data_name = [];
             
             % filter fieldnames with numeric type
+            fn_num = zeros(size(fn,1),1);
             for j=1:size(fn,1)
                 fn_num(j) = isnumeric(matObj.(fn{j}));
             end
             switch sum(fn_num)
                 case 0
                     warndlg('There is no numeric data inside the mat-file.')
-                case 1
-                    data_name = fn{fn_num};
-                    
+                case 1                    
+                    data_name = fn{find(fn_num)};                    
                 otherwise
-                    str = fn(fn_num);
+                    str = fn(find(fn_num));
                     [s,v] = listdlg('PromptString','Select a file:',...
                         'SelectionMode','single','ListString',str);
                     if v>0
@@ -928,7 +716,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         point = questdlg('It seems that your file uses the decimal mark ''comma''. A ''point'' mark is required. Do you want to change the decimal mark from Comma to Point and try again?','Decimal mark question','Yes and replace.','No - Stop please.','Yes and replace.');
                         if strcmp(point,'Yes and replace.')
                             file = memmapfile([get(F.heditFolder,'String') FileName], 'writable', true);
-                            file.Data(transpose(file.Data==uint8(','))) = uint8('.');
+                            file.Data(transpose(file.Data== uint8(','))) = uint8('.');
                             fopen([get(F.heditFolder,'String') FileName],'r');
                             dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
                             fclose(fileID);
@@ -1137,12 +925,11 @@ function buttonStart_Callback(hObject, eventdata, handles)
         if showLFHF
             buttonContinuousLFHF_Callback
         end
+        
         continuousHRV_show
-
         refresh_positionmarker 
-
         calc_off
-    end
+	end
 
 end
 
@@ -1173,7 +960,7 @@ end
 function editLimits
     calc_on    
     xl = get(F.ha1,'Xlim');
-    if strfind(get(F.heditLimits,'String'),'..')
+    if contains(get(F.heditLimits,'String'),'..')
         set(F.heditLimits,'String',[datestr(xl(1)/(24*60*60),'HH:MM:SS') '..' datestr(xl(2)/(24*60*60),'HH:MM:SS')])
     else
         set(F.heditLimits,'String',[num2str(xl(1)) ':' num2str(xl(2))])    
@@ -1305,19 +1092,74 @@ function buttonCD_Callback(hObject, eventdata, handles)
 end
 
 function buttonFontChange_Callback(hObject, eventdata, handles) 
-    font_set = uisetfont(F.hbuttonFontChange);
-%     ch = findall(F.fh,'type','text');
-    if isstruct(font_set)
+    answer = inputdlg({'Enter default font size:'},'Change font size',[1 30],{num2str(font_size)});
+    if ~isempty(answer)
+        font_size_factor =  str2double(answer{1})/font_size;
+        font_size = str2double(answer{1});
         names = fieldnames(F);
         for i=2:length(names)
             try
-                set(F.(names{i}),font_set);
+                set(F.(names{i}),'FontSize',get(F.(names{i}),'FontSize')*font_size_factor);
+                set(F.(names{i}),'Foregroundcolor','r')
             catch
             end
         end    
-        save('font_setting.mat','font_set');
+        save('font_setting.mat','font_size_factor');
+        set(F.htoolbarFont,'State','off')
+    end        
+ 
+    names = fieldnames(F);
+    for i=2:length(names)
+        try
+            set(F.(names{i}),'Foregroundcolor',clr.text)
+        catch
+        end
+    end 
+    
+end
+
+function buttonDisplayChange_Callback(hObject, eventdata, handles) 
+    answer = questdlg('What is your preferred color scheme?', ...
+	'Change display', ...
+	'Light mode','Dark mode','User specified','Dark mode');
+
+    if ~isempty(answer)
+        switch answer
+            case 'Light mode'
+                colormode = 'light';
+                load('clr_light.mat')
+                load('icons.mat')
+            case 'Dark mode'
+                colormode = 'dark';
+                load('clr_dark.mat')
+                load('icons_inverse.mat')
+            case 'User specified'
+                colormode = 'user';
+                load('clr_user.mat')
+                load('icons.mat')
+            otherwise
+                colormode = 'light';
+                load('clr_light.mat')
+                load('icons.mat')                
+        end       
+
+      % update colors
+        calc_on
+        set(F.fh,'Color',clr.background)
+        set_colors
+        
+        waveform 
+        localreturnmap
+        tachogram      
+        spectrum_tachogram
+        poincare
+        Continuousstyle
+        
+        refresh_positionmarker
+        calc_off          
+        
     end
-    set(F.htoolbarFont,'State','off')
+ 
 end
 
 function buttonTitle_Callback(hObject, eventdata, handles) 
@@ -1334,7 +1176,7 @@ function buttonTitle_Callback(hObject, eventdata, handles)
     else
         name = {[name_org my_title]};
     end
-    title(F.ha1,name{signal_num},'Interpreter','none')
+    title(F.ha1,name{signal_num},'Interpreter','none','Color',clr.titles)
     set(F.htoolbarTitle,'State','off')
 end
 
@@ -1372,18 +1214,38 @@ function buttonIntervalPrevious2_Callback(hObject, eventdata, handles)
     calc_off
 end
 
+function buttonNormalize_Callback(hObject, eventdata, handles)
+    xl = round(get(F.ha1,'xlim')*Fs);
+    yl = max(sig_waveform(max(1,xl(1)):min(size(sig,1),xl(2)),signal_num));
+    ylm = min(sig_waveform(max(1,xl(1)):min(size(sig,1),xl(2)),signal_num));
+    set(F.ha1,'ylim',[ylm-.1*(yl-ylm),yl+.5*(yl-ylm)])
+    refresh_waveform
+end
+
 function buttonShowWaveform_Callback(hObject, eventdata, handles)
     calc_on
     showWaveform = not(showWaveform);
     if showWaveform
         unit = {'Waveform'};
+        set(F.hbuttonShowWaveform, 'String', 'Impulse')
+        set(F.hbuttonNormalize, 'visible', 'on')
+        set(F.hbuttonShowBeats, 'visible', 'on')        
     else
         unit = {'Impulse'};
+        set(F.hbuttonShowWaveform, 'String', 'Waveform')
+        set(F.hbuttonNormalize, 'visible', 'off')
+        set(F.hbuttonShowBeats, 'visible', 'off')
     end
     waveform
     calc_off
 end
 
+function buttonShowBeats_Callback(hObject, eventdata, handles)
+    calc_on
+    showBeats = not(showBeats);
+    refresh_waveform
+    calc_off
+end
 function buttonShowIntervals_Callback(hObject, eventdata, handles)
     calc_on
     showIntervals = not(showIntervals);
@@ -1585,6 +1447,220 @@ function buttonAddBeat_Callback(hObject, eventdata, handles)
     calc_off
 end
 
+
+function buttonAlignPosPeak_Callback(hObject, eventdata, handles) 
+
+    calc_on    
+    xl = get(F.ha1,'Xlim');
+
+  % Local beats
+    Ann_pre = Ann(Ann<xl(1)*Fs);    
+    Ann_post = Ann(Ann>xl(2)*Fs);
+    Ann_tmp = setdiff(Ann,[Ann_pre; Ann_post]);
+
+  % Relocate beats to highest positive value in the ECG
+    for i=1:length(Ann_tmp)
+        loc_window = Ann_tmp(i)+[-round(.05*Fs):round(.05*Fs)];
+        if loc_window(1)<1
+            loc_window = loc_window(loc_window>0);
+        end
+        if loc_window(end)>length(sig_waveform)
+            loc_window = loc_window(loc_window<=length(sig_waveform)); 
+        end
+        tmp_EKG = sig_waveform(loc_window);
+        [~,max_pos] = max(tmp_EKG);
+        Ann_tmp(i) = loc_window(1)+(max_pos-1);
+    end   
+
+  % Update all
+    Ann = unique([Ann_pre; Ann_tmp; Ann_post]);
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1;
+    RR = diff(Ann);
+    center = Ann(1:end-1)+RR/2;
+  
+    RRorg = RR/Fs;   
+    if isnan(filter_limit)
+        RRfilt = RRorg;
+    else
+        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+    end
+
+    RR = RRfilt;   
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
+     
+    relRR = HRV.rrx(RR);
+    relRR_pct = round(relRR*1000)/10;
+    
+    waveform
+    compute_local    
+    localreturnmap
+    tachogram  
+    spectrum_tachogram
+    poincare
+    update_table 
+    set(F.hbuttonContinuousRecalculation,'visible','on');
+    calc_off
+end
+
+function buttonAlignNegPeak_Callback(hObject, eventdata, handles) 
+
+    calc_on    
+    xl = get(F.ha1,'Xlim');
+
+  % Local beats
+    Ann_pre = Ann(Ann<xl(1)*Fs);    
+    Ann_post = Ann(Ann>xl(2)*Fs);
+    Ann_tmp = setdiff(Ann,[Ann_pre; Ann_post]);
+
+  % Relocate beats to highest positive value in the ECG
+    for i=1:length(Ann_tmp)
+        loc_window = Ann_tmp(i)+[-round(.05*Fs):round(.05*Fs)];
+        if loc_window(1)<1
+            loc_window = loc_window(loc_window>0);
+        end
+        if loc_window(end)>length(sig_waveform)
+            loc_window = loc_window(loc_window<=length(sig_waveform)); 
+        end
+        tmp_EKG = sig_waveform(loc_window);
+        [~,min_pos] = min(tmp_EKG);
+        Ann_tmp(i) = loc_window(1)+(min_pos-1);
+    end    
+
+  % Update all
+    Ann = unique([Ann_pre; Ann_tmp; Ann_post]);
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1;
+    RR = diff(Ann);
+    center = Ann(1:end-1)+RR/2;
+  
+    RRorg = RR/Fs;   
+    if isnan(filter_limit)
+        RRfilt = RRorg;
+    else
+        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+    end
+
+    RR = RRfilt;   
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
+     
+    relRR = HRV.rrx(RR);
+    relRR_pct = round(relRR*1000)/10;
+    
+    waveform
+    compute_local    
+    localreturnmap
+    tachogram  
+    spectrum_tachogram
+    poincare
+    update_table 
+    set(F.hbuttonContinuousRecalculation,'visible','on');
+    calc_off
+end
+
+function buttonAlignAllPosPeak_Callback(hObject, eventdata, handles) 
+
+    calc_on    
+
+  % Relocate all beats to highest positive value in the ECG
+    for i=1:length(Ann)
+        loc_window = Ann(i)+[-round(.05*Fs):round(.05*Fs)];
+        if loc_window(1)<1
+            loc_window = loc_window(loc_window>0);
+        end
+        if loc_window(end)>length(sig_waveform)
+            loc_window = loc_window(loc_window<=length(sig_waveform)); 
+        end
+        tmp_EKG = sig_waveform(loc_window);
+        [~,max_pos] = max(tmp_EKG);
+        Ann(i) = loc_window(1)+(max_pos-1);
+    end   
+
+  % Update all
+    Ann = unique(Ann);
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1;
+    RR = diff(Ann);
+    center = Ann(1:end-1)+RR/2;
+  
+    RRorg = RR/Fs;   
+    if isnan(filter_limit)
+        RRfilt = RRorg;
+    else
+        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+    end
+
+    RR = RRfilt;   
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
+     
+    relRR = HRV.rrx(RR);
+    relRR_pct = round(relRR*1000)/10;
+    
+    waveform
+    compute_local    
+    localreturnmap
+    tachogram  
+    spectrum_tachogram
+    poincare
+    update_table 
+    set(F.hbuttonContinuousRecalculation,'visible','on');
+    calc_off
+end
+
+function buttonAlignAllNegPeak_Callback(hObject, eventdata, handles) 
+
+    calc_on    
+
+  % Relocate all beats to highest positive value in the ECG
+    for i=1:length(Ann)
+        loc_window = Ann(i)+[-round(.05*Fs):round(.05*Fs)];
+        if loc_window(1)<1
+            loc_window = loc_window(loc_window>0);
+        end
+        if loc_window(end)>length(sig_waveform)
+            loc_window = loc_window(loc_window<=length(sig_waveform)); 
+        end
+        tmp_EKG = sig_waveform(loc_window);
+        [~,min_pos] = min(tmp_EKG);
+        Ann(i) = loc_window(1)+(min_pos-1);
+    end   
+
+  % Update all
+    Ann = unique(Ann);
+    sig = zeros(max(Ann)+1,1);
+    sig(Ann+1,1)=1;
+    RR = diff(Ann);
+    center = Ann(1:end-1)+RR/2;
+  
+    RRorg = RR/Fs;   
+    if isnan(filter_limit)
+        RRfilt = RRorg;
+    else
+        RRfilt = HRV.RRfilter(RRorg,filter_limit); 
+    end
+
+    RR = RRfilt;   
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
+     
+    relRR = HRV.rrx(RR);
+    relRR_pct = round(relRR*1000)/10;
+    
+    waveform
+    compute_local    
+    localreturnmap
+    tachogram  
+    spectrum_tachogram
+    poincare
+    update_table 
+    set(F.hbuttonContinuousRecalculation,'visible','on');
+    calc_off
+end
+
+
 function buttonRemoveArtifact2_Callback(hObject, eventdata, handles) 
 
     [x, y] = getpts(F.ha6);
@@ -1635,7 +1711,7 @@ function buttonPicker_Callback(hObject, eventdata, handles)
         [~,pos] = min((RRorg(1:end-1)-x(i)).^2+(RRorg(2:end)-y(i)).^2);
     end
     
-    xl = get(F.ha1,'Xlim')
+    xl = get(F.ha1,'Xlim');
     set(F.ha1,'Xlim',[ceil(xl(1)+(center(pos)/Fs-mean(xl)))  ceil(xl(2)+(center(pos)/Fs-mean(xl)))]) 
     get(F.ha1,'Xlim')
     editLimits
@@ -1906,13 +1982,13 @@ function MenuWebsite(hObject, eventdata, handles)
 end
 
 function MenuTerms(hObject, eventdata, handles)
-message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
+    message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
 'Supporting files to load BIOPAC ACQ data (load_acq.m, acq2mat.m) are licensed by Jimmy Shen given the copyright notice LICENSE_ACQ.','',...
 'Copyright (c) 2009, Jimmy Shen','',...
 'All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS.','',...
 'Icons licensed under MIT. Copyright (c) 2014 Drifty (http://drifty.com/)','',...
 'The MIT License (MIT)','',...
-'Copyright (c) 2015-2018 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)','',...
+['Copyright (c) 2015-' HRVTool_version_date(end-3:end) ' Marcus Vollmer (http://marcusvollmer.github.io/HRV/)'],'',...
 ['Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal'...
 'in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell'...
 'copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:'],'',...
@@ -1924,29 +2000,200 @@ message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate
 end
 
 function MenuInfo(hObject, eventdata, handles) 
-message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
-'The user interface is made for all people who are interested in HRV, as well as scientists.',...
+    message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
+'This user interface is made for all people and scientists who are interested in the analysis of heart rate variability.',...
 'HRVTool has been tested on Windows 7 64bit, Linux Ubuntu 18.04 and Mac OS 10.9.','',...
 'Bug reports and other issues are welcome. Please correspond to marcus.vollmer@uni-greifswald.de.','',...
-'This work and all supported files and functions are licensed under the terms of the MIT License (MIT).',...
-'Copyright (c) 2015-2018 Marcus Vollmer','',HRVTool_version_date};
+'Supporting files to load BIOPAC ACQ data (load_acq.m, acq2mat.m) are licensed by Jimmy Shen given the copyright notice LICENSE_ACQ.','',...
+'Copyright (c) 2009, Jimmy Shen','',...
+'All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS.',...
+['Copyright (c) 2015-' HRVTool_version_date(end-3:end) ' Marcus Vollmer'],'',HRVTool_version_date};
 
     msgbox(message,'HRVTool Info','custom',importdata('logo.png'));
 end
 
+function set_colors
+      
+  % set menu colors
+    F.fh.MenuBar = 'figure';
+    F.htoolbar = findall(F.fh,'tag','FigureToolBar');
+
+    jToolbar = get(get(F.htoolbar,'JavaContainer'),'ComponentPeer'); % Get the underlying JToolBar component
+    color = java.awt.Color(clr.background(1),clr.background(2),clr.background(3));
+    jToolbar.setBackground(color);
+    jToolbar.setBorderPainted(false); % Remove the toolbar border, to blend into figure contents
+    jFrame = get(handle(F.fh),'JavaFrame'); % Remove the separator line between toolbar and contents
+    jFrame.showTopSeparator(false);
+    
+    jtbc = jToolbar.getComponents;
+    for idx=1:length(jtbc)
+        jtbc(idx).setOpaque(false);
+        jtbc(idx).setBackground(color);
+        for childIdx = 1 : length(jtbc(idx).getComponents)
+            jtbc(idx).getComponent(childIdx-1).setBackground(color);
+        end
+    end
+
+  % set text colors
+    names = fieldnames(F);
+    for i=2:length(names)
+        try
+            set(F.(names{i}),'Foregroundcolor',clr.text)
+        catch
+        end
+        if contains(names{i},'hbutton') || contains(names{i},'hpopup') 
+            set(F.(names{i}),'BackgroundColor',clr.bgcolor_buttons, 'FontSize',font_size)
+        end
+        if contains(names{i},'hedit')
+            set(F.(names{i}),'BackgroundColor',clr.bgcolor_editfields, 'FontSize',font_size)
+            
+        end
+    %     if contains(names{i},'ha')
+    %         set(F.(names{i}),'BackgroundColor',clr.bgcolor_axes)
+    %     end    
+    end 
+    
+  % set panel colors and font sizes
+	set(F.hpSubject,       'BackgroundColor',clr.bgcolor_panels1,'FontSize',font_size,'BorderType','none');
+    set(F.hpIntervals,     'BackgroundColor',clr.bgcolor_panels3,'FontSize',font_size,'BorderType','none');
+    set(F.hpResults,       'BackgroundColor',clr.bgcolor_results,'FontSize',font_size,'BorderType','none');
+    set(F.hpLocalReturnMap,'BackgroundColor',clr.bgcolor_panels2,'FontSize',font_size,'BorderType','none');
+    set(F.hpSpectrum,      'BackgroundColor',clr.bgcolor_panels2,'FontSize',font_size,'BorderType','none');
+    set(F.hpContinuous,    'BackgroundColor',clr.bgcolor_panels3,'FontSize',font_size,'BorderType','none');
+    set(F.hpFootline ,     'BackgroundColor',clr.bgcolor_panels1,'FontSize',font_size,'BorderType','none');
+
+  % set text and background colors
+    elements1 = {'htextHeadline','htextGlobal','htextLocal','htextFootprint','htextLocal_range','htextLocal_label','htextFootprint_range','htextFootprint_label','htextLabel_meanrr','htextLabel_sdnn','htextLabel_rmssd','htextLabel_pnn50','htextLabel_tri','htextLabel_tinn','htextLabel_sd1sd2','htextLabel_sd1sd2ratio','htextLabel_lfhf','htextLabel_lfhfratio'};
+    elements2 = {'htextGlobal_meanrr','htextGlobal_sdnn','htextGlobal_rmssd','htextGlobal_pnn50','htextGlobal_tri','htextGlobal_tinn','htextGlobal_sd1sd2ratio','htextGlobal_lfhfratio','htextLocal_meanrr','htextLocal_sdnn','htextLocal_rmssd','htextLocal_pnn50','htextLocal_tri','htextLocal_tinn','htextLocal_sd1sd2ratio','htextLocal_lfhfratio'};
+    elements3 = {'htextFootprint_meanrr','htextFootprint_sdnn','htextFootprint_rmssd','htextFootprint_pnn50','htextFootprint_tri','htextFootprint_tinn','htextFootprint_sd1sd2ratio','htextFootprint_lfhfratio'};
+    elements = [elements1, elements2, elements3];
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','center','BackgroundColor',clr.bgcolor_results);
+    end
+    
+    elements = {'htextGlobal_sd1sd2','htextGlobal_lfhf','htextLocal_sd1sd2','htextLocal_lfhf','htextFootprint_sd1sd2','htextFootprint_lfhf'};
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.75*font_size,'HorizontalAlignment','center','BackgroundColor',clr.bgcolor_results);
+    end
+    
+    elements = {'htextLabel_rrHRV','htextLabel_rrHRV_median','htextLabel_rrHRV_iqr','htextLabel_rrHRV_shift','htextGlobal_rrHRV_median','htextGlobal_rrHRV_iqr','htextGlobal_rrHRV_shift','htextLocal_rrHRV_median','htextLocal_rrHRV_iqr','htextLocal_rrHRV_shift','htextFootprint_rrHRV_median','htextFootprint_rrHRV_iqr','htextFootprint_rrHRV_shift'};
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','center','BackgroundColor',clr.bgcolor_highlight);
+    end
+
+    elements = {'htextLabel_rrHRV_shift','htextGlobal_rrHRV_shift','htextLocal_rrHRV_shift','htextFootprint_rrHRV_shift'};
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.75*font_size,'HorizontalAlignment','center','BackgroundColor',clr.bgcolor_highlight);
+    end
+
+    
+    elements = {'htextLabel_rrHRV_median','htextLabel_rrHRV_iqr','htextLabel_rrHRV_shift','htextLabel_rrHRV'};
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','right','BackgroundColor',clr.bgcolor_highlight);
+    end
+    
+    elements = {'htextLabel_meanrr','htextLabel_sdnn','htextLabel_rmssd','htextLabel_pnn50','htextLabel_tri','htextLabel_tinn','htextLabel_sd1sd2','htextLabel_sd1sd2ratio','htextLabel_lfhf','htextLabel_lfhfratio' };
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','right','BackgroundColor',clr.bgcolor_results);
+    end
+   
+    elements = {'htextLocal_range','htextLocal_label','htextFootprint_range','htextFootprint_label'};
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.65*font_size,'FontAngle','italic','HorizontalAlignment','center','BackgroundColor',clr.bgcolor_results);
+    end
+    elements = {'htextGlobal','htextLocal','htextFootprint'};
+    for i=1:length(elements)
+        set(F.(elements{i}),'FontSize',.9*font_size,'FontWeight','bold','HorizontalAlignment','center','BackgroundColor',clr.bgcolor_results);
+    end 
+    
+    set(F.htextHeadline, 'FontSize',1.15*font_size,'FontWeight','bold','HorizontalAlignment','left','BackgroundColor',clr.bgcolor_results);
+    
+    
+    
+  % set icons
+    set(F.hbuttonIntervalNext2, 'CData',[icons.android_arrow_forward(:,4:12,:) icons.android_arrow_forward(:,5:13,:)]);
+    set(F.hbuttonIntervalNext, 'CData',icons.android_arrow_forward);
+    set(F.hbuttonIntervalPrevious, 'CData',icons.android_arrow_back);
+    set(F.hbuttonIntervalPrevious2, 'CData',[icons.android_arrow_back(:,4:12,:) icons.android_arrow_back(:,5:13,:)]);
+    set(F.hbuttonNormalize, 'CData',icons.arrow_expand);
+    set(F.hbuttonShowBeats, 'CData',icons.heart); 
+    set(F.hbuttonShowIntervals, 'CData',icons.interval);    
+    set(F.hbuttonShowProportions, 'CData',icons.proportion);
+    set(F.hbuttonFilterDecrease, 'CData',icons.minus_round);
+    set(F.hbuttonFilterIncrease, 'CData',icons.plus_round);
+    set(F.hbuttonAlignPosPeak, 'CData',icons.arrow_up_b);
+    set(F.hbuttonAlignNegPeak, 'CData',icons.arrow_down_b);
+    set(F.hbuttonAlignAllPosPeak, 'CData',icons.chevron_up);
+    set(F.hbuttonAlignAllNegPeak, 'CData',icons.chevron_down);
+    set(F.hbuttonRemoveArtifact2, 'CData',icons.ios7_close);
+    set(F.hbuttonPicker, 'CData',icons.pin);
+    set(F.hbuttonNumbers, 'CData',icons.ios7_information);
+    set(F.hbuttonFootprint, 'CData',icons.ios7_paw);
+    set(F.hbuttonPDF, 'CData',icons.android_image);
+    set(F.hbuttonAnimation, 'CData',icons.social_youtube);
+    set(F.hbuttonMarkerIncrease, 'CData',icons.plus_circled);
+    set(F.hbuttonMarkerDecrease, 'CData',icons.minus_circled);
+    set(F.hbuttonLineType, 'CData',icons.android_more);
+    set(F.hbuttonDetail, 'CData',icons.arrow_resize);
+    set(F.hbuttonPickerSection, 'CData',icons.pin);  
+    
+    set(findall(F.htoolbar,'tag','Standard.FileOpen'), 'CData',icons.android_folder);
+    set(findall(F.htoolbar,'tag','Standard.SaveFigure'), 'CData',icons.archive);
+    set(findall(F.htoolbar,'tag','Standard.PrintFigure'),'CData',icons.android_printer);
+    set(findall(F.htoolbar,'tag','Exploration.ZoomIn'),'CData',icons.android_search_plus);
+    set(findall(F.htoolbar,'tag','Exploration.ZoomOut'),'CData',icons.android_search_minus);
+    set(findall(F.htoolbar,'tag','Exploration.Pan'),'CData',icons.android_hand);
+    set(findall(F.htoolbar,'tag','Exploration.DataCursor'),'CData',icons.android_locate);
+    set(findall(F.htoolbar,'tag','Exploration.Brushing'),'CData',icons.wand);
+    set(findall(F.htoolbar,'tag','HRV.Copy'), 'CData',icons.clipboard);
+    set(findall(F.htoolbar,'tag','HRV.Font'), 'CData',icons.android_mixer);
+    set(findall(F.htoolbar,'tag','HRV.Colors'), 'CData',icons.android_display);     
+    set(findall(F.htoolbar,'tag','HRV.Title'), 'CData',icons.android_promotion);
+       
+        
+  % font sizes
+    elements = {'hbuttonFolder','hbuttonFontChange','hbuttonTitle','hbuttonShowWaveform','hbuttonShowIntervals','hbuttonShowProportions','hbuttonIgnoreBeat','hbuttonRemoveBeat','hbuttonAddBeat','hbuttonRemoveBeat','hbuttonAddBeat','hbuttonAlignPosPeak','hbuttonAlignNegPeak','hbuttonAlignAllPosPeak','hbuttonAlignAllNegPeak','hbuttonSaveAnnotations','hbuttonReturnMapType','hbuttonNumbers','hbuttonFootprint','hbuttonPDF','hbuttonAnimation','hbuttonMarkerIncrease','hbuttonMarkerDecrease','hbuttonLineType','hbuttonDetail','hbuttonTachogramType','hbuttonContinuousVisibility','hbuttonContinuousLFHF','hbuttonContinuousTINN','hbuttonSaveAs','hbuttonCopy'};
+    for i=1:length(elements)
+        set(F.(elements{i}), 'FontSize',.75*font_size);%, 'FontUnits','normalized'
+    end
+  
+    set(F.htextFilter, 'FontSize',.75*font_size, 'Foregroundcolor',clr.text, 'BackgroundColor',clr.bgcolor_panels3);
+    set(F.htextAuthor, 'FontSize',.85*font_size, 'Foregroundcolor',clr.text);
+    set(F.htextBusy,   'FontSize',.85*font_size, 'Foregroundcolor',clr.footer_busy);
+     
+    elements = {'hbuttonIntervalNext2','hbuttonIntervalNext','hbuttonIntervalPrevious','hbuttonIntervalPrevious2','hbuttonNormalize','hbuttonFilterDecrease','hbuttonFilterIncrease','hbuttonRemoveArtifact2','hbuttonContinuousRecalculation','hbuttonPickerSection'};
+    for i=1:length(elements)
+        set(F.(elements{i}), 'FontSize',font_size);%, 'FontUnits','normalized'
+    end
+    
+    if exist([cd filesep 'font_setting.mat'],'file')>0
+        load('font_setting.mat')
+        names = fieldnames(F);
+        for i=2:length(names)
+            try
+                set(F.(names{i}),'FontSize',get(F.(names{i}),'FontSize')*font_size_factor);
+            catch
+            end
+        end    
+    end
+
+
+  
+end
+
 %% CALC ON/OFF
 function calc_on
-    set(F.hpSubject,'BackgroundColor',[1 0 0])
-    set(F.hpFootline,'BackgroundColor',[1 0 0])
-    set(F.htextAuthor,'BackgroundColor',[1 0 0])
-    set(F.htextBusy,'BackgroundColor',[1 0 0])
+    set(F.hpSubject,'Background',clr.footer_active)
+    set(F.hpFootline,'BackgroundColor',clr.footer_active)
+    set(F.htextAuthor,'BackgroundColor',clr.footer_active)
+    set(F.htextBusy,'BackgroundColor',clr.footer_active)
     drawnow
 end
 function calc_off
-    set(F.hpSubject,'BackgroundColor',[1 1 1])
-    set(F.hpFootline,'BackgroundColor',[1 1 1])
-    set(F.htextAuthor,'BackgroundColor',[1 1 1])
-    set(F.htextBusy,'BackgroundColor',[1 1 1])
+    set(F.hpSubject,'BackgroundColor',clr.footer)
+    set(F.hpFootline,'BackgroundColor',clr.footer)
+    set(F.htextAuthor,'BackgroundColor',clr.footer)
+    set(F.htextBusy,'BackgroundColor',clr.footer)
     drawnow
 end
 
@@ -1992,7 +2239,7 @@ function dialog_annotationfile
             end
         end
 
-        set(F.htextBusy,'String','Busy - Beat annotations will be computed.');
+        set(F.htextBusy,'String','Busy - Beat detection process is running.');
         drawnow
         qrs_detection                            
 
@@ -2005,7 +2252,14 @@ function dialog_annotationfile
 
     sig = zeros(max(Ann)+1,1);
     sig(Ann+1,1)=1; 
+    set(F.hbuttonNormalize,'visible','on');
     set(F.hbuttonShowWaveform,'visible','on');
+    set(F.hbuttonShowBeats, 'visible', 'on')
+    set(F.hbuttonAlignPosPeak,'visible','on');
+    set(F.hbuttonAlignNegPeak,'visible','on');
+    set(F.hbuttonAlignAllPosPeak,'visible','on');
+    set(F.hbuttonAlignAllNegPeak,'visible','on');
+    
     imported = 1;
         
 end
@@ -2018,13 +2272,12 @@ function waveform
     clear F.ha1
     
     if showWaveform
-        plot(F.ha1,[1:size(sig_waveform,1)]/Fs,sig_waveform(:,signal_num),'b');
+        plot(F.ha1,[1:size(sig_waveform,1)]/Fs,sig_waveform(:,signal_num),'Color',clr.plot_lines);
     else
-        plot(F.ha1,[1:size(sig,1)]/Fs,sig(:,signal_num),'b');
+        plot(F.ha1,[1:size(sig,1)]/Fs,sig(:,signal_num),'Color',clr.plot_lines);
     end
     hold(F.ha1,'on')
-    plot(F.ha1,Ann(my_artifacts+1)/Fs,repmat(.6,length(my_artifacts),1),'xk');
-    %mycol = p.Color;
+    plot(F.ha1,Ann(my_artifacts+1)/Fs,repmat(.6,length(my_artifacts),1),'x','Color',clr.plot_marker);
 
     yl = max(sig(:,signal_num));
     ylm = min(sig(:,signal_num));
@@ -2041,7 +2294,8 @@ function waveform
     axis(F.ha1,[xl(1),xl(2),ylm,(yl-ylm)*.5+yl])
 
     
-    set(F.ha1,'visible','on')
+    set(F.ha1,'visible','on',...
+        'Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
 
     xl = get(F.ha1,'Xlim');
     tmp = find(Ann/Fs<xl(2) & Ann/Fs>xl(1));
@@ -2054,8 +2308,9 @@ function waveform
         for j=1:size(tmp,1)
             i = tmp(j);
             if i<size(Ann,1)
-                line((Ann(i)/Fs+RR(i)*[.1 .9]),[.6 .6]*(yl-ylm)+ylm,'Color','k','Parent',F.ha1)
-                text(center(i)/Fs,.7*(yl-ylm)+ylm,num2str(RR(i),'%.2f'),'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                line((Ann(i)/Fs+RR(i)*[.1 .9]),[.6 .6]*(yl-ylm)+ylm,'Color',clr.plot_lines2,'Parent',F.ha1)
+                text(center(i)/Fs,.7*(yl-ylm)+ylm,num2str(RR(i),'%.2f'),...
+                    'Color',clr.plot_text,'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
             end
         end
     end
@@ -2068,20 +2323,31 @@ function waveform
             i = max([tmp(j)-1 1]);
             if i<size(Ann,1)-1
                 plot((center(i):diff(center(i:i+1))/4:center(i+1))/Fs,sign(relRR_pct(i+1))*v*(yl-ylm)*.15+(yl-ylm)*.95+ylm,'-','Color',c(i,:),'Parent',F.ha1);    
-                text(Ann(i+1)/Fs,1.2*yl,[num2str(relRR_pct(i+1),'%.1f') '%'],'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                text(Ann(i+1)/Fs,1.2*yl,[num2str(relRR_pct(i+1),'%.1f') '%'],...
+                    'Color',clr.plot_text,'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
             end
         end
     end
 
-
+    if showWaveform && showBeats
+        for j=1:size(tmp,1)
+            i = tmp(j);
+            if i<size(Ann,1)
+                line(Ann(i)/Fs+[0 0], ylm+[.1 .9]*(yl-ylm), 'LineStyle','--', 'Color',clr.plot_lines2, 'Parent',F.ha1)
+                plot(Ann(i)/Fs, sig_waveform(Ann(i),signal_num), '.', 'Markersize', 15, 'Color',clr.plot_lines2, 'Parent',F.ha1)
+            end
+        end
+    end
+    
+    
     hold(F.ha1,'off')
-    ylabel(F.ha1,unit{signal_num})
+    ylabel(F.ha1,unit{signal_num},'Color',clr.labels)
 %     xlabel(F.ha1,'sec')
-    title(F.ha1,name{signal_num},'Interpreter','none')
+    title(F.ha1,name{signal_num},'Interpreter','none','Color',clr.titles)
       
 end
 
-%% refresh_wavefrom
+%% refresh_wavefrom and annotation
 function refresh_waveform
     hold(F.ha1,'on')
     xl = get(F.ha1,'Xlim');
@@ -2103,8 +2369,9 @@ function refresh_waveform
         for j=1:size(tmp,1)
             i = tmp(j);
             if i<size(Ann,1)
-                line((Ann(i)/Fs+RR(i)*[.1 .9]),[.6 .6]*(yl-ylm)+ylm,'Color','k','Parent',F.ha1)
-                text(center(i)/Fs,.7*(yl-ylm)+ylm,num2str(RR(i),'%.2f'),'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                line((Ann(i)/Fs+RR(i)*[.1 .9]), [.6 .6]*(yl-ylm)+ylm, 'Color',clr.plot_lines2,'Parent',F.ha1)
+                text(center(i)/Fs, .7*(yl-ylm)+ylm, num2str(RR(i),'%.2f'),...
+                    'Color',clr.plot_text,'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
             end
         end
     end
@@ -2116,11 +2383,22 @@ function refresh_waveform
         for j=1:size(tmp,1)   
             i = max([tmp(j)-1 1]);
             if i<size(Ann,1)-1
-                plot((center(i):diff(center(i:i+1))/4:center(i+1))/Fs,sign(relRR_pct(i+1))*v*(yl-ylm)*.15+(yl-ylm)*.95+ylm,'-','Color',c(i,:),'Parent',F.ha1);    
-                text(Ann(i+1)/Fs,1.2*yl,[num2str(relRR_pct(i+1),'%.1f') '%'],'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                plot((center(i):diff(center(i:i+1))/4:center(i+1))/Fs, sign(relRR_pct(i+1))*v*(yl-ylm)*.15+(yl-ylm)*.95+ylm, '-','Color',c(i,:),'Parent',F.ha1);    
+                text(Ann(i+1)/Fs,1.2*yl, [num2str(relRR_pct(i+1),'%.1f') '%'],...
+                    'Color',clr.plot_text,'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
             end
         end
-    end    
+    end  
+    
+    if showWaveform && showBeats
+        for j=1:size(tmp,1)
+            i = tmp(j);
+            if i<size(Ann,1)
+                line(Ann(i)/Fs+[0 0], [ylm sig_waveform(Ann(i),signal_num)+.25*(yl-ylm)], 'LineStyle','--', 'Color',clr.plot_lines2, 'Parent',F.ha1)
+                plot(Ann(i)/Fs, sig_waveform(Ann(i),signal_num), '.', 'Markersize', 15, 'Color',clr.plot_lines2, 'Parent',F.ha1)
+            end
+        end
+    end
 
     hold(F.ha1,'off')
 end
@@ -2292,7 +2570,7 @@ function compute_local
     tmp = setdiff(tmp,size(Ann,1));
     if size(tmp,1)>1
         RR_loc = RR(tmp(1:end-1));
-        if tmp(1)==1;
+        if tmp(1)==1
             rr_loc = relRR(tmp(1:end-1))*100;  
         else
             rr_loc = relRR(tmp(2:end-1))*100;
@@ -2313,16 +2591,16 @@ function localreturnmap
     if RMtype        
         if showFootprint
             plot(fp_RR(1:end-1),fp_RR(2:end),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},...
-            'Marker','o','MarkerFaceColor',.8*[1 1 1],'MarkerEdgeColor',.8*[1 1 1],'MarkerSize',RMmarkersize-2,...
-            'Color',.8*[1 1 1])
+            'Marker','o','MarkerFaceColor',clr.plot_footprint_markerface,'MarkerEdgeColor',clr.plot_footprint_markeredge,'MarkerSize',RMmarkersize-2,...
+            'Color',clr.plot_footprint_markeredge)
             hold(F.ha2,'on')
         end              
         plot(RR_loc(1:end-1),RR_loc(2:end),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},...
-            'Marker','o','MarkerFaceColor',0*[1 1 1],'MarkerEdgeColor',0*[1 1 1],'MarkerSize',RMmarkersize,...
-            'Color',0*[1 1 1])
+            'Marker','o','MarkerFaceColor',clr.plot_markerface,'MarkerEdgeColor',clr.plot_markeredge,'MarkerSize',RMmarkersize,...
+            'Color',clr.plot_markeredge)
         if RMnumbers
             for j=1:size(RR_loc,1)-1
-                text(RR_loc(j),RR_loc(j+1),num2str(j,'%i'),'Parent',F.ha2,'HorizontalAlignment','center','Clipping','on','Color',[1 1 1])         
+                text(RR_loc(j),RR_loc(j+1),num2str(j,'%i'),'Parent',F.ha2,'HorizontalAlignment','center','Clipping','on','Color',clr.plot_marker)         
             end
         end
         RMstyle_RR
@@ -2330,16 +2608,16 @@ function localreturnmap
     else
         if showFootprint
             plot(fp_rr(1:end-1),fp_rr(2:end),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},...
-            'Marker','o','MarkerFaceColor',.8*[1 1 1],'MarkerEdgeColor',.8*[1 1 1],'MarkerSize',RMmarkersize-2,...
-            'Color',.8*[1 1 1])
+            'Marker','o','MarkerFaceColor',clr.plot_footprint_markerface,'MarkerEdgeColor',clr.plot_footprint_markeredge,'MarkerSize',RMmarkersize-2,...
+            'Color',clr.plot_footprint_markeredge)
             hold(F.ha2,'on')
         end 
         plot(rr_loc(1:end-1),rr_loc(2:end),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},...
-            'Marker','o','MarkerFaceColor',0*[1 1 1],'MarkerEdgeColor',0*[1 1 1],'MarkerSize',RMmarkersize,...
-            'Color',0*[1 1 1])
+            'Marker','o','MarkerFaceColor',clr.plot_markerface,'MarkerEdgeColor',clr.plot_markeredge,'MarkerSize',RMmarkersize,...
+            'Color',clr.plot_markeredge)
         if RMnumbers
             for j=1:size(rr_loc,1)-1
-                text(rr_loc(j),rr_loc(j+1),num2str(j,'%i'),'Parent',F.ha2,'HorizontalAlignment','center','Clipping','on','Color',[1 1 1])         
+                text(rr_loc(j),rr_loc(j+1),num2str(j,'%i'),'Parent',F.ha2,'HorizontalAlignment','center','Clipping','on','Color',clr.plot_marker)         
             end
         end
         RMstyle_rr
@@ -2352,13 +2630,13 @@ function localreturnmap
 end
 
 function rrHRV_pdf(RR_loc,rr_loc)
-    set(F.ha2b,'visible','on') 
+    set(F.ha2b,'Color',clr.axes_bg,'visible','on')
     delete(get(F.ha2b,'Children'));
     
     [med,qr,shift] = HRV.rrHRV(RR_loc,0);
     
 	hold(F.ha2,'on')
-	plot(shift(1),shift(2),'xb','MarkerSize',20,'Parent',F.ha2)
+	plot(shift(1),shift(2),'x','Color',clr.plot_pdf_marker,'MarkerSize',20,'LineWidth',2.5,'Parent',F.ha2)
 	hold(F.ha2,'off')
     
     if showFootprint
@@ -2366,7 +2644,7 @@ function rrHRV_pdf(RR_loc,rr_loc)
         fp_d = sqrt(sum([fp_rr(1:end-1)-fp_shift(1) fp_rr(2:end)-fp_shift(2)].^2,2));
         if sum(~isnan(fp_d))>1
             [fp_f,fp_xi] = ksdensity(fp_d);
-            area(fp_xi,fp_f,'Parent',F.ha2b,'FaceColor',.8*[1 1 1],'EdgeColor',.8*[1 1 1])
+            area(fp_xi,fp_f,'Parent',F.ha2b,'FaceColor',clr.plot_pdf_face,'EdgeColor',clr.plot_pdf_edge)
             hold(F.ha2b,'on')
         end
     end
@@ -2374,20 +2652,20 @@ function rrHRV_pdf(RR_loc,rr_loc)
     d = sqrt(sum([rr_loc(1:end-1)-shift(1) rr_loc(2:end)-shift(2)].^2,2));    
     if sum(~isnan(d))>1
         [f,xi] = ksdensity(d);
-        plot(xi,f,'-k','Parent',F.ha2b,'LineWidth',2)
+        plot(xi,f,'-','Color',clr.plot_lines,'Parent',F.ha2b,'LineWidth',2)
         hold(F.ha2b,'on')
         text(23,.2,['Median = ' num2str(med,'%.2f')],...
-            'HorizontalAlignment','right','Parent',F.ha2b)
+            'Color',clr.plot_text,'HorizontalAlignment','right','Parent',F.ha2b)
         text(23,.14,['IQR = ' num2str(qr,'%.2f')],...
-            'HorizontalAlignment','right','Parent',F.ha2b)
+            'Color',clr.plot_text,'HorizontalAlignment','right','Parent',F.ha2b)
         hold(F.ha2b,'off')
         PDFstyle 
     else
         hold(F.ha2b,'on')
         text(23,.2,'Median = NaN',...
-            'HorizontalAlignment','right','Parent',F.ha2b)
+            'Color',clr.plot_text,'HorizontalAlignment','right','Parent',F.ha2b)
         text(23,.14,'IQR = NaN',...
-            'HorizontalAlignment','right','Parent',F.ha2b)
+            'Color',clr.plot_text,'HorizontalAlignment','right','Parent',F.ha2b)
         hold(F.ha2b,'off')
         PDFstyle 
     end
@@ -2417,11 +2695,11 @@ function animation
     hold(F.ha6,'on')
     
     h_white = animatedline('Parent',F.ha1);
-    h_white.Color = [1 1 1];
+    h_white.Color = clr.animation;
     h_white.LineWidth = 2;
 
     h = animatedline('Parent',F.ha1);
-    h.Color = [0 0 0];
+    h.Color = clr.plot_lines;
     h.LineWidth = 2;
     
     xl = round(get(F.ha1,'Xlim')*Fs);
@@ -2433,13 +2711,15 @@ function animation
     end
     types = {'-','--',':','none'}; 
     
-    yl = max(sig(:,signal_num));
-    ylm = min(sig(:,signal_num));
-
+    yl = get(F.ha1,'Ylim'); ylm = yl(1); yl = (yl(2)+.25*ylm)/1.5;
     
     a = tic; % start timer
     ktmp =  max(1,xl(1));
-    addpoints(h_white,ktmp/Fs:1/Fs:ktmp/Fs+.5,sig(ktmp:ktmp+.5*Fs,signal_num))
+    if showWaveform 
+        addpoints(h_white,ktmp/Fs:1/Fs:ktmp/Fs+.5,sig_waveform(ktmp:ktmp+.5*Fs,signal_num)) 
+    else
+        addpoints(h_white,ktmp/Fs:1/Fs:ktmp/Fs+.5,sig(ktmp:ktmp+.5*Fs,signal_num)) 
+    end
     
     rate = speed/20;
     flag = -min(sum(Ann<xl(1)),2);
@@ -2453,10 +2733,17 @@ function animation
         end
         bis = xl(1)+floor(k*rate*Fs);
         
-        if bis<=size(sig,1) 
-            addpoints(h,(von:bis)/Fs,sig(von:bis,signal_num))
-            if bis<min(xl(2)-.5*Fs,size(sig,1)-.5*Fs) 
-                addpoints(h_white,(von:bis)/Fs+.5,sig((von:bis)+.5*Fs,signal_num))
+        if bis<=size(sig,1)
+            if showWaveform 
+                addpoints(h, (von:bis)/Fs, sig_waveform(von:bis,signal_num))
+                if bis<min(xl(2)-.5*Fs,size(sig,1)-.5*Fs) 
+                    addpoints(h_white, (von:bis)/Fs+.5, sig_waveform((von:bis)+.5*Fs,signal_num))
+                end
+            else
+                addpoints(h, (von:bis)/Fs, sig(von:bis,signal_num))
+                if bis<min(xl(2)-.5*Fs,size(sig,1)-.5*Fs) 
+                    addpoints(h_white, (von:bis)/Fs+.5, sig((von:bis)+.5*Fs,signal_num))
+                end 
             end
         end
         
@@ -2466,12 +2753,21 @@ function animation
             i=tmp(j)-1;
             if i>0
                 if showIntervals
-                    line((Ann(i)/Fs+RR(i)*[.1 .9]),[.6 .6]*(yl-ylm)+ylm,'Color','k','Parent',F.ha1)
-                    text(center(i)/Fs,.7*(yl-ylm)+ylm,num2str(RR(i),'%.2f'),'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                    line((Ann(i)/Fs+RR(i)*[.1 .9]), [.6 .6]*(yl-ylm)+ylm, 'Color',clr.plot_lines2,'Parent',F.ha1)
+                    text(center(i)/Fs, .7*(yl-ylm)+ylm, num2str(RR(i),'%.2f'),...
+                        'Color',clr.plot_text,'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                end
+                if showWaveform && showBeats
+                    i=tmp(j);
+                    if i<size(Ann,1)
+                        line(Ann(i)/Fs+[0 0], [ylm sig_waveform(Ann(i),signal_num)+.25*(yl-ylm)], 'LineStyle','--', 'Color',clr.plot_lines2, 'Parent',F.ha1)
+                        plot(Ann(i)/Fs, sig_waveform(Ann(i),signal_num), '.', 'Markersize', 15, 'Color',clr.plot_lines2, 'Parent',F.ha1)
+                    end
+                    i=tmp(j)-1;
                 end
                 if i>1 && flag>0
                     plot(RR(i-1),RR(i),'Parent',F.ha6,...
-                    'Marker','o','MarkerFaceColor',[0 0 0],'MarkerEdgeColor',[1 1 1],'MarkerSize',5);
+                    'Marker','o','MarkerFaceColor',clr.plot_markerface,'MarkerEdgeColor',clr.plot_markeredge,'MarkerSize',5);
                 end
             end
         end       
@@ -2484,23 +2780,24 @@ function animation
             if i>0
 
                 if showProportions 
-                    plot((center(i):diff(center(i:i+1))/4:center(i+1))/Fs,sign(relRR_pct(i+1))*v*(yl-ylm)*.15+(yl-ylm)*.95+ylm,'-','Color',c(i,:),'Parent',F.ha1);    
-                    text(Ann(i+1)/Fs,1.2*yl,[num2str(relRR_pct(i+1),'%.1f') '%'],'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
+                    plot((center(i):diff(center(i:i+1))/4:center(i+1))/Fs, sign(relRR_pct(i+1))*v*(yl-ylm)*.15+(yl-ylm)*.95+ylm, '-','Color',c(i,:),'Parent',F.ha1);    
+                    text(Ann(i+1)/Fs,1.2*yl,[num2str(relRR_pct(i+1),'%.1f') '%'],...
+                        'Color',clr.plot_text,'HorizontalAlignment','center','Rotation',rotation,'Clipping','on','Parent',F.ha1)    
                 end
                 
                 % Local Return Map
                 if RMtype
                     if flag>0
                         if flag2>0
-                            line(RR(i-1:i),RR(i:i+1),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},'Color',[0 0 0]);
+                            line(RR(i-1:i), RR(i:i+1), 'Parent',F.ha2,'LineStyle',types{RMlinetype+1},'Color',clr.plot_markeredge);
                         else
                             flag2 = 1;
                         end
                         plot(RR(i),RR(i+1),'Parent',F.ha2,...
-                            'Marker','o','MarkerFaceColor',[0 0 0],'MarkerEdgeColor',[1 1 1],'MarkerSize',RMmarkersize);                    
+                            'Marker','o','MarkerFaceColor',clr.plot_markerface,'MarkerEdgeColor',clr.plot_markeredge,'MarkerSize',RMmarkersize);                    
                         if RMnumbers
                             text(RR(i),RR(i+1),num2str(num,'%i'),'Parent',F.ha2,...
-                                'HorizontalAlignment','center','Clipping','on','Color',[1 1 1]) 
+                                'HorizontalAlignment','center','Clipping','on','Color',clr.plot_markeredge) 
                         end
                         num = num+1;
                     else
@@ -2509,15 +2806,15 @@ function animation
                 else
                     if flag>0
                         if flag2>0
-                            line(relRR_pct(i-1:i),relRR_pct(i:i+1),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},'Color',[0 0 0]);
+                            line(relRR_pct(i-1:i),relRR_pct(i:i+1),'Parent',F.ha2,'LineStyle',types{RMlinetype+1},'Color',clr.plot_markeredge);
                         else
                             flag2 = 1;
                         end
                         plot(relRR_pct(i),relRR_pct(i+1),'Parent',F.ha2,...
-                            'Marker','o','MarkerFaceColor',[0 0 0],'MarkerEdgeColor',[1 1 1],'MarkerSize',RMmarkersize);                    
+                            'Marker','o','MarkerFaceColor',clr.plot_markerface,'MarkerEdgeColor',clr.plot_markeredge,'MarkerSize',RMmarkersize);                    
                         if RMnumbers
                             text(relRR_pct(i),relRR_pct(i+1),num2str(num,'%i'),'Parent',F.ha2,...
-                                'HorizontalAlignment','center','Clipping','on','Color',[1 1 1]) 
+                                'HorizontalAlignment','center','Clipping','on','Color',clr.plot_markeredge) 
                         end
                         num = num+1;
                     else
@@ -2550,7 +2847,7 @@ end
 
 %% RR Tachogram
 function tachogram
-    plot((Ann(2:end)/Fs)/(24*60*60),RR,'-k','Parent',F.ha3)
+    plot((Ann(2:end)/Fs)/(24*60*60),RR,'-','Color',clr.plot_lines,'Parent',F.ha3)
     refresh_positionmarker_label
     Tachogramstyle 
 end
@@ -2563,12 +2860,15 @@ function spectrum_tachogram
         set(F.ha4,'visible','on');
         if sum(isnan(RRorg))==0 && ~isempty(RRorg)
             [pLF,pHF,LFHFratio,~,~,~,f,Y,NFFT] = HRV.fft_val_fun(RRorg,Fs);
-            plot(F.ha4,f,2*abs(Y(1:NFFT/2+1)))
+            plot(F.ha4,f,2*abs(Y(1:NFFT/2+1)),'Color',clr.plot_lines)
 
             yl = get(F.ha4,'Ylim');
-            text(.185,.8*yl(2),['\bfLF/HF ratio = ' num2str(LFHFratio,'%.3f')],'HorizontalAlignment','center','parent',F.ha4)
-            text(.095,.5*yl(2),{'LFnu' [num2str(pLF,'%.2f') '%']},'HorizontalAlignment','center','parent',F.ha4)
-            text(.275,.5*yl(2),{'HFnu' [num2str(pHF,'%.2f') '%']},'HorizontalAlignment','center','parent',F.ha4)
+            text(.185,.8*yl(2),['\bfLF/HF ratio = ' num2str(LFHFratio,'%.3f')],...
+                'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
+            text(.095,.5*yl(2),{'LFnu' [num2str(pLF,'%.2f') '%']},...
+                'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
+            text(.275,.5*yl(2),{'HFnu' [num2str(pHF,'%.2f') '%']},...
+                'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
         
             Spectrumstyle
         else
@@ -2583,12 +2883,15 @@ function spectrum_tachogram_local
         if sum(isnan(RR_loc))==0 && ~isempty(RR_loc)
             set(F.ha4,'visible','on');
             [pLF,pHF,LFHFratio,~,~,~,f,Y,NFFT] = HRV.fft_val_fun(RR_loc,Fs);
-            plot(F.ha4,f,2*abs(Y(1:NFFT/2+1)))
+            plot(F.ha4,f,2*abs(Y(1:NFFT/2+1)),'Color',clr.plot_lines)
 
             yl = get(F.ha4,'Ylim');
-            text(.185,.8*yl(2),['\bfLF/HF ratio = ' num2str(LFHFratio,'%.3f')],'HorizontalAlignment','center','parent',F.ha4)
-            text(.095,.5*yl(2),{'LFnu' [num2str(pLF,'%.2f') '%']},'HorizontalAlignment','center','parent',F.ha4)
-            text(.275,.5*yl(2),{'HFnu' [num2str(pHF,'%.2f') '%']},'HorizontalAlignment','center','parent',F.ha4)
+            text(.185,.8*yl(2),['\bfLF/HF ratio = ' num2str(LFHFratio,'%.3f')],...
+                'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
+            text(.095,.5*yl(2),{'LFnu' [num2str(pLF,'%.2f') '%']},...
+                'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
+            text(.275,.5*yl(2),{'HFnu' [num2str(pHF,'%.2f') '%']},...
+                'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
 
             Spectrumstyle
         else 
@@ -2603,20 +2906,20 @@ function poincare
     
     x_nan = find(isnan(RR(1:end-1)));  
     x_nan = unique([max(x_nan-1,1); x_nan]);
-    plot(RRorg(x_nan),RRorg(x_nan+1),'.','Parent',F.ha6,'Color',[1 .5 .5])
+    plot(RRorg(x_nan),RRorg(x_nan+1),'.','Parent',F.ha6,'Color',clr.poincare_outlier)
     
     hold(F.ha6,'on')
     
     x1 = RR(1:end-1);
     x2 = RR(2:end);
-    plot(x1,x2,'.','Parent',F.ha6,'Color',[0 .45 .75])
+    plot(x1,x2,'.','Parent',F.ha6,'Color',clr.poincare_normal)
     [SD1,SD2,~] = HRV.returnmap_val(RR,0);
     
     plot(RRorg(my_artifacts(my_artifacts>0 & my_artifacts<size(RRorg,1)-1)),...
         RRorg(my_artifacts(my_artifacts>0 & my_artifacts<size(RRorg,1)-1)+1),...
-        'xk','Parent',F.ha6);
+        'x','Color',clr.poincare_artifacts,'Parent',F.ha6);
     p = calculateEllipse(HRV.nanmean(x1),HRV.nanmean(x2),2*SD1,2*SD2,45);
-    plot(F.ha6,p(:,1), p(:,2),'k','linewidth',1.5)
+    plot(F.ha6,p(:,1), p(:,2),'-','Color',clr.poincare_ellipse,'linewidth',1.5)
     hold(F.ha6,'off')
   
     Poincarestyle
@@ -2683,13 +2986,6 @@ function continuousHRV_compute_hrv
     HRV_sdsd = HRV_sdsd(:);
     HRV_pnn50 = HRV_pnn50(:);
     HRV_sd1sd2ratio = HRV_sd1sd2ratio(:);
-    size(HRV_rr_med)
-    size(HRV_rr_iqr)
-    size(HRV_rmssd)
-    size(HRV_sdnn)
-    size(HRV_sdsd)
-    size(HRV_pnn50)
-    size(HRV_sd1sd2ratio)
     toc
 
     set(F.htextBusy,'String','');
@@ -2717,8 +3013,6 @@ function continuousHRV_show
         [HRV_rr_med,HRV_rr_iqr,HRV_rmssd/100,HRV_sd1sd2ratio,HRV_lfhfratio],...
         'Parent',F.ha5);        
     else
-        size(x)
-        size(HRV_hf)
         [hAx,hLine1,hLine2] = plotyy(x,HRV_hf,...
         [x,x,x,x],[HRV_rr_med,HRV_rr_iqr,HRV_rmssd/100,HRV_sd1sd2ratio],...
         'Parent',F.ha5);
@@ -2740,9 +3034,9 @@ function continuousHRV_show
     for i=1:size(S,1) 
         plot([S.start(i) S.start(i) S.ende(i) S.ende(i)],...
             [0*diff(yl) .9*diff(yl) .9*diff(yl) 0*diff(yl)]+yl(1),...
-            'Parent',F.ha5,'Clipping','on','Color',[1 0 .5])
+            'Parent',F.ha5,'Clipping','on','Color',clr.segmentwise_window)
         text(S.center(i),.8*diff(yl)+yl(1),S.name{i},'Parent',F.ha5,...
-            'HorizontalAlignment','center','Clipping','on','Color',[1 0 .5])
+            'HorizontalAlignment','center','Clipping','on','Color',clr.segmentwise_window)
     end
     
     Continuousstyle
@@ -2829,8 +3123,8 @@ function refresh_positionmarker_label
         hold(F.ha5,'on')
         yl = get(F.ha5,'Ylim'); yl = yl+[-.2 .2].*diff(yl);
         for i=1:size(label_lim,1)
-            fill(label_lim(i,[1 1 2 2])./(60*60*24),[yl yl(2) yl(1)],'w','Parent',F.ha5,'FaceColor',.5*[1 .3 1],'FaceAlpha',.2,'EdgeColor','w','EdgeAlpha',0)
-            text(mean(label_lim(i,:))/(60*60*24),180-20*mod(sum(label_lim(:,1)<label_lim(i,1)),2),label_names{i},'Parent',F.ha5,'HorizontalAlignment','center','Clipping','on')  
+            fill(label_lim(i,[1 1 2 2])./(60*60*24),[yl yl(2) yl(1)],'w','Parent',F.ha5,'FaceColor',clr.segmentwise_positionmarker_face,'FaceAlpha',.2,'EdgeColor',clr.segmentwise_positionmarker_edge,'EdgeAlpha',0)
+            text(mean(label_lim(i,:))/(60*60*24),180-20*mod(sum(label_lim(:,1)<label_lim(i,1)),2),label_names{i},'Color',clr.segmentwise_positionmarker_text,'Parent',F.ha5,'HorizontalAlignment','center','Clipping','on')  
         end
         hold(F.ha5,'off') 
     end
@@ -2960,37 +3254,41 @@ end
 %% Style
 function RMstyle_rr
     RMzoom = [.125 .225 1 2];
-    set(F.ha2,'Box','on','Xgrid','on','Ygrid','on')
+    set(F.ha2,'Box','on','Xgrid','on','Ygrid','on',...
+        'Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
     set(F.ha2,'Xlim',100*RMzoom(RMzoomlevel+1)*[-1 1],'Ylim',100*RMzoom(RMzoomlevel+1)*[-1 1])
-    ylabel(F.ha2,'rr_{i} in %')
-    xlabel(F.ha2,'rr_{i-1} in %')
-    title(F.ha2,'Local Return Map')
+    ylabel(F.ha2,'rr_{i} in %','Color',clr.labels)
+    xlabel(F.ha2,'rr_{i-1} in %','Color',clr.labels)
+    title(F.ha2,'Local Return Map','Color',clr.titles)
 end
 
 function RMstyle_RR
-    set(F.ha2,'Box','on','Xgrid','on','Ygrid','on')
+    set(F.ha2,'Box','on','Xgrid','on','Ygrid','on',...
+        'Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
 
     xl = get(F.ha2,'XLim'); yl = get(F.ha2,'YLim');
     xmin = floor((min(xl(1),yl(1))-.02)/.05)*.05;
     xmax = ceil((max(xl(2),yl(2))+.02)/.05)*.05;
     set(F.ha2,'Xlim',[xmin xmax],'Ylim',[xmin xmax])
     
-    ylabel(F.ha2,'RR_{i} in sec')
-    xlabel(F.ha2,'RR_{i-1} in sec')
-    title(F.ha2,'Local Return Map')
+    ylabel(F.ha2,'RR_{i} in sec','Color',clr.labels)
+    xlabel(F.ha2,'RR_{i-1} in sec','Color',clr.labels)
+    title(F.ha2,'Local Return Map','Color',clr.titles)
 end
 
 function PDFstyle
-    set(F.ha2b,'Box','on','Xtick',5:5:20,'XtickLabel',{'','','',''},'Xgrid','on','Ytick',[])
+    set(F.ha2b,'Box','on','Xtick',5:5:20,'XtickLabel',{'','','',''},'Xgrid','on','Ytick',[],...
+        'GridColor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
     set(F.ha2b,'Xlim',[0 25],'Ylim',[0 .25])
-end
-
+end   
+    
 function Tachogramstyle
-    set(F.ha3,'Box','on','Xgrid','on','Ygrid','on')
+    set(F.ha3,'Box','on','Xgrid','on','Ygrid','on',...
+        'Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
     axis(F.ha3,[0 max(Ann)/Fs .9*min(RR) min([1.1*max(RR) 2.5])])
-    ylabel(F.ha3,'sec')
-    xlabel(F.ha3,'time')
-    title(F.ha3,'RR Tachogram')
+    ylabel(F.ha3,'sec','Color',clr.labels)
+    xlabel(F.ha3,'time','Color',clr.labels)
+    title(F.ha3,'RR Tachogram','Color',clr.titles)
     
     if Tachogramtype
         axis(F.ha3,[get(F.ha1,'XLim')/(60*60*24) .9*min(RR) min([1.1*max(RR) 2.5])])        
@@ -3012,19 +3310,18 @@ function Tachogramstyle
 end
 
 function Spectrumstyle
-    title(F.ha4,'Spectrum of RR Tachogram')
-    xlabel(F.ha4,'Frequency (Hz)')
-    set(F.ha4,'Box','on','Xgrid','on')
-    set(F.ha4,'Xlim',[0 .5],'YTick',[],'XTick',[.04 .15 .4],...
-        'XTickLabel',{'','0.15','0.4'})
+    title(F.ha4,'Spectrum of RR Tachogram','Color',clr.titles)
+    xlabel(F.ha4,'Frequency (Hz)','Color',clr.labels)
+    set(F.ha4,'Box','on','Xgrid','on','Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
+    set(F.ha4,'Xlim',[0 .5],'YTick',[],'XTick',[.04 .15 .4],'XTickLabel',{'','0.15','0.4'})
 end
 
 function Continuousstyle
     yl = get(F.ha5,'Ylim');
-    set(F.ha5,'Box','on','Ygrid','on')
-    title(F.ha5,'Segmentwise HRV analysis')
-    %xlabel(F.ha5,'sec')
-    ylabel(F.ha5,'bpm')
+    set(F.ha5,'Box','on','Ygrid','on','Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
+    title(F.ha5,'Segmentwise HRV analysis','Color',clr.titles,'FontSize',font_size)
+    %xlabel(F.ha5,'sec','Color',clr.labels)
+    ylabel(F.ha5,'bpm','Color',clr.labels)
     
     leg = {'HF','rrMedian','rrIQR','RMSSD','SD1/SD2'};
     if showTINN
@@ -3034,13 +3331,12 @@ function Continuousstyle
         leg = [leg,'LF/HF'];
     end
     cont_legend = legend(F.ha5,leg,...
-        'Location','northeastoutside','Box','off',...
-        'Units','normalized','FontUnits','normalized');
+        'Location','northeastoutside','Box','off','Units','normalized','TextColor',clr.text);
 % ,'SDNN','SDSD','pNN50'
     legendpos = get(cont_legend,'Position');
     patch([0 Ann(min(2+MeasuresNum,numel(Ann)))/(Fs*24*60*60) Ann(min(2+MeasuresNum,numel(Ann)))/(Fs*24*60*60) 0],[yl(1) yl yl(2)],...
-        'red','FaceColor','interp',...
-        'FaceVertexCData',[1 0 0; 1 1 1; 1 1 1; 1 0 0],...
+        clr.segmentwise_redlayer,'FaceColor','interp',...
+        'FaceVertexCData',[clr.segmentwise_redlayer; clr.background; clr.background; clr.segmentwise_redlayer],...
         'EdgeColor','none','FaceAlpha',.5,'Parent',F.ha5) 
     
     linkaxes([hAx(1),hAx(2)],'x')  
@@ -3052,19 +3348,18 @@ function Continuousstyle
         t_steps = ceil(size(xt,2)/10);
         set(F.ha5,'XTick',xt(t_steps:t_steps:size(xt,2)));
         set(F.ha5,'XTickLabel',xtl(t_steps:t_steps:size(xt,2),:));
-    end
-    
-%     set(F.ha5,'XTick',get(F.ha3,'XTick'));
-%     set(F.ha5,'XTickLabel',get(F.ha3,'XTickLabel'));
+    end    
+
     set(F.ha5,'Position',[.05 .15 .59 .65])
 end
 
 function Poincarestyle
-    set(F.ha6,'Box','on','Xgrid','on','Ygrid','on')
+    set(F.ha6,'Box','on','Xgrid','on','Ygrid','on',...
+        'Gridcolor',clr.axes_grid,'XColor',clr.axes_ticks,'YColor',clr.axes_ticks,'Color',clr.axes_bg)
     axis(F.ha6,[.9*min(RR) min([1.1*max(RR) 2.5]) .9*min(RR) min([1.1*max(RR) 2.5])])
-    ylabel(F.ha6,'RR_{i}')
-    %xlabel(F.ha6,'RR_{i-1}')
-    title(F.ha6,'Global Return map')
+    ylabel(F.ha6,'RR_{i}','Color',clr.labels)
+    %xlabel(F.ha6,'RR_{i-1}','Color',clr.labels)
+    title(F.ha6,'Global Return map','Color',clr.titles)
 end
 
 
@@ -3102,13 +3397,25 @@ function my_closereq(hObject, eventdata, handles)
     delete(gcf)
 end
 
+%% Resize Request
+function my_resizereq(hObject, eventdata, handles)
+    screenposition_new = get(gcf,'Position');
+    font_size = font_size*screenposition_new(3)/screenposition(3);
+    screenposition = screenposition_new;
+    set_colors
+
+end
+
+
 function save_settings(hObject, eventdata, handles)
 
     fileID = fopen([get(F.heditFolder,'String') 'settings_' FileName(1:end-4) '.m'],'w');
     fprintf(fileID,['%% HRVTool settings for ' FileName(1:end-4) '\n\n']);
     fprintf(fileID,['% HRVTool_version = ' num2str(HRVTool_version,'%1.2f') ';\n\n']);
-
+    
+    fprintf(fileID,['colormode' '={''' colormode '''};\n']); 
     fprintf(fileID,['my_title' '={''' my_title{1} '''};\n']);
+    fprintf(fileID,['showBeats' '=' mat2str(showBeats) ';\n']);    
     fprintf(fileID,['showIntervals' '=' mat2str(showIntervals) ';\n']);
     fprintf(fileID,['showProportions' '=' mat2str(showProportions) ';\n']);
     fprintf(fileID,['showFootprint' '=' mat2str(showFootprint) ';\n']);
@@ -3151,13 +3458,13 @@ function create_HRV_settings
     fclose(fileID);
     
     message = {['HRVTool v' num2str(HRVTool_version,'%01.2f')],'Analyzing Heart Rate Variability','',...
-'The user interface is made for all people who are interested in HRV, as well as scientists.',...
-'This is your first use with this version. Please help to improve this application!','',...
-'If there is something misunderstanding, not working or missing please correspond to marcus.vollmer@uni-greifswald.de. Your bug reports and issues are welcome.',...
+'This user interface is made for all people and scientists who are interested in the analysis of heart rate variability.',...
+'Please help to improve this application!','',...
+'If there is something misunderstanding, not working or missing please correspond to marcus.vollmer@uni-greifswald.de. Your bug reports and issues are welcome. If you are a programmer and want to help - contact me.',...
 'Supporting files to load BIOPAC ACQ data (load_acq.m, acq2mat.m) are licensed by Jimmy Shen given the copyright notice LICENSE_ACQ.','',...
 'Copyright (c) 2009, Jimmy Shen','',...
 'All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS.',...
-'Copyright (c) 2015-2018 Marcus Vollmer','',HRVTool_version_date};
+['Copyright (c) 2015-' HRVTool_version_date(end-3:end) ' Marcus Vollmer'],'',HRVTool_version_date};
 
     msgbox(message,'HRVTool','custom',importdata('logo.png'));
 end

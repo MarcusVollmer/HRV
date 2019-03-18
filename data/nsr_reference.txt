@@ -1,0 +1,12 @@
+Reference for:
+nsr001.ecg
+nsr001.hea
+
+Data coming from Normal Sinus Rhythm RR Interval Database:
+http://physionet.org/physiobank/database/nsr2db/
+
+
+This database includes beat annotation files for 54 long-term ECG recordings of subjects in normal sinus rhythm (30 men, aged 28.5 to 76, and 24 women, aged 58 to 73). The original ECG recordings (not available) were digitized at 128 samples per second, and the beat annotations were obtained by automated analysis with manual review and correction.
+
+
+Goldberger AL, Amaral LAN, Glass L, Hausdorff JM, Ivanov PCh, Mark RG, Mietus JE, Moody GB, Peng C-K, Stanley HE. PhysioBank, PhysioToolkit, and PhysioNet: Components of a New Research Resource for Complex Physiologic Signals. Circulation 101(23):e215-e220 [Circulation Electronic Pages; http://circ.ahajournals.org/cgi/content/full/101/23/e215]; 2000 (June 13).
