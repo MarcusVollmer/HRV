@@ -11,16 +11,16 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.03
+% Version: 1.04
 % Author: Marcus Vollmer
-% Date: 18 March 2019
+% Date: 01 September 2019
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq, 'ResizeFcn', @my_resizereq);
 set(gcf,'Units','inches');
 
 global icons qrs_settings AppPath HRVTool_version HRVTool_version_date font_size font_size_factor colormode clr screenposition
-HRVTool_version = 1.03;
-HRVTool_version_date = '18 March 2019';
+HRVTool_version = 1.04;
+HRVTool_version_date = '01 September 2019';
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4));
 
@@ -679,7 +679,8 @@ function buttonStart_Callback(hObject, eventdata, handles)
 % Load EDF files          
         case 'edf'
             [sig_waveform, Fs, StartDate] = read_edf([get(F.heditFolder,'String') FileName], 1);
-            dialog_annotationfile           
+            sig_waveform = double(sig_waveform);
+            dialog_annotationfile
             
 % Load ACQ files            
         case 'acq'
@@ -692,6 +693,33 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 Fs = 1000/matObj.hdr.graph.sample_time;
                 dialog_annotationfile
             end
+            
+% Load MIB files
+        case {'mib','mibf'}
+            [record, Fs, StartDate] = read_mib([get(F.heditFolder,'String') FileName]);
+            if isstruct(record.RR)
+                fn = fieldnames(record.RR);
+                Dates = [];
+                labels = [];
+                for i=1:length(fn)
+                    Dates = [Dates; record.RR.(fn{i}).Date];
+                    labels = [labels; record.RR.(fn{i}).label];                    
+                end  
+                RR = round(seconds(diff(Dates))*Fs);
+                Ann = cumsum([0;RR]);
+                %my_artifacts = find(labels~='Q');
+            else
+                Ann = record.Ann;
+                %my_artifacts = find(record.labels~='Q');
+            end           
+
+            RR = diff(Ann);
+            sig = zeros(max(Ann)+1,1);
+            sig(Ann+1,1)=1;            
+            unit = {'Impulse'};
+            imported = 1;            
+            
+       
             
  % Load other files
         otherwise
@@ -872,7 +900,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
         RR(min(my_artifacts+1,size(RR,1))) = NaN;
         relRR = HRV.rrx(RR);
         relRR_pct = round(relRR*1000)/10;
-
+        
         tachogram  
 
         % Load Footprint
@@ -1079,7 +1107,7 @@ end
 
 %% BUTTONS
 function buttonCD_Callback(hObject, eventdata, handles) 
-    [FileName,PathName] = uigetfile({'*.acq';'*.ann';'*.atr';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.txt';'*.wav'},'Select the ECG data');
+    [FileName,PathName] = uigetfile({'*.*';'*.acq';'*.ann';'*.atr';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.mib';'*.mibf';'*.txt';'*.wav'},'Select the ECG data');
     if length(PathName)>1
         set(F.heditFolder,'String',PathName);
         fileextention = FileName(max(strfind(FileName,'.'))+1:end);
@@ -1145,7 +1173,7 @@ function buttonDisplayChange_Callback(hObject, eventdata, handles)
 
       % update colors
         calc_on
-        set(F.fh,'Color',clr.background)
+        set(F.fh,'Color',clr.background,'InvertHardcopy','off')
         set_colors
         
         waveform 
@@ -1215,8 +1243,8 @@ function buttonIntervalPrevious2_Callback(hObject, eventdata, handles)
 end
 
 function buttonNormalize_Callback(hObject, eventdata, handles)
-    xl = round(get(F.ha1,'xlim')*Fs);
-    yl = max(sig_waveform(max(1,xl(1)):min(size(sig,1),xl(2)),signal_num));
+    xl  = round(get(F.ha1,'xlim')*Fs);
+    yl  = max(sig_waveform(max(1,xl(1)):min(size(sig,1),xl(2)),signal_num));
     ylm = min(sig_waveform(max(1,xl(1)):min(size(sig,1),xl(2)),signal_num));
     set(F.ha1,'ylim',[ylm-.1*(yl-ylm),yl+.5*(yl-ylm)])
     refresh_waveform
@@ -1910,10 +1938,25 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
     if path~=0    
         switch file(end-2:end)
             case 'pdf'
-                pos = get(F.fh,'Position');
-                set(F.fh,'Position',[0,0,1280,900]);
-                print('-painters','-dpdf', [path file])
-                set(F.fh,'Position',pos);                
+                answer = questdlg('What is preferred pdf resolution?', ...
+                    'Resolution', ...
+                    '1280x900','1600x900','1920x1080','1280x900'); 
+                
+                if ~isempty(answer)
+                    pos = get(F.fh,'Position');
+                    switch answer
+                        case '1280x900'
+                            res = [1280 900];
+                        case '1600x900'
+                            res = [1600 900];
+                        case '1920x1080'
+                            res = [1920 1080];                            
+                    end
+                    set(F.fh,'Position',[0,0,res(1),res(2)]);
+                    print('-painters','-dpdf', [path file])
+                    set(F.fh,'Position',pos);            
+                end
+
             case 'png'
                 print('-dpng', [path file])
             case 'fig'
@@ -2201,6 +2244,7 @@ end
 function dialog_annotationfile
     button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
     unit = {'Waveform'};
+    set(F.hbuttonShowWaveform, 'String', 'Waveform')
     
     if strcmp(button,'Yes')                            
         load_annotation       
@@ -2279,7 +2323,7 @@ function waveform
     hold(F.ha1,'on')
     plot(F.ha1,Ann(my_artifacts+1)/Fs,repmat(.6,length(my_artifacts),1),'x','Color',clr.plot_marker);
 
-    yl = max(sig(:,signal_num));
+    yl  = max(sig(:,signal_num));
     ylm = min(sig(:,signal_num));
      
     str = get(F.heditLimits,'String');
@@ -2288,7 +2332,7 @@ function waveform
         pos = strfind(str,':');
         xl = [str2double(str(1:min(pos)-1)) str2double(str(max(pos)+1:end))];   
     else
-        xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
+        xl = 24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
     end
         
     axis(F.ha1,[xl(1),xl(2),ylm,(yl-ylm)*.5+yl])
@@ -3152,7 +3196,7 @@ function update_table_global
 
     set(F.htextGlobal_rrHRV_median,'String',num2str(HRV_global_rrHRV_median,'%1.2f'))
     set(F.htextGlobal_rrHRV_iqr,'String',num2str(HRV_global_rrHRV_iqr,'%1.2f'))
-    set(F.htextGlobal_rrHRV_shift,'String',['(' num2str(HRV_global_rrHRV_shift(1),'%+1.2f') ',' num2str(HRV_global_rrHRV_shift(2),'%+1.2f') ')'])
+    set(F.htextGlobal_rrHRV_shift,'String',[num2str(HRV_global_rrHRV_shift(1),'%+1.2f') ',' num2str(HRV_global_rrHRV_shift(2),'%+1.2f')])
     set(F.htextGlobal_meanrr,'String',[num2str(1000*HRV_global_meanrr,'%1.0f') ' | ' num2str(60/HRV_global_meanrr,'%3.0f')])
     set(F.htextGlobal_sdnn,'String',num2str(1000*HRV_global_sdnn,'%1.1f'))
     set(F.htextGlobal_rmssd,'String',num2str(1000*HRV_global_rmssd,'%1.1f'))
@@ -3177,7 +3221,7 @@ function update_table_local
 
     set(F.htextLocal_rrHRV_median,'String',num2str(HRV_local_rrHRV_median,'%1.2f'))
     set(F.htextLocal_rrHRV_iqr,'String',num2str(HRV_local_rrHRV_iqr,'%1.2f'))
-    set(F.htextLocal_rrHRV_shift,'String',['(' num2str(HRV_local_rrHRV_shift(1),'%+1.2f') ',' num2str(HRV_local_rrHRV_shift(2),'%+1.2f') ')'])
+    set(F.htextLocal_rrHRV_shift,'String',[num2str(HRV_local_rrHRV_shift(1),'%+1.2f') ',' num2str(HRV_local_rrHRV_shift(2),'%+1.2f')])
     set(F.htextLocal_meanrr,'String',[num2str(1000*HRV_local_meanrr,'%1.0f') ' | ' num2str(60/HRV_local_meanrr,'%3.0f')])
     set(F.htextLocal_sdnn,'String',num2str(1000*HRV_local_sdnn,'%1.1f'))
     set(F.htextLocal_rmssd,'String',num2str(1000*HRV_local_rmssd,'%1.1f'))
@@ -3206,7 +3250,7 @@ function update_table_footprint
 
         set(F.htextFootprint_rrHRV_median,'String',num2str(HRV_footprint_rrHRV_median,'%1.2f'))
         set(F.htextFootprint_rrHRV_iqr,'String',num2str(HRV_footprint_rrHRV_iqr,'%1.2f'))
-        set(F.htextFootprint_rrHRV_shift,'String',['(' num2str(HRV_footprint_rrHRV_shift(1),'%+1.2f') ',' num2str(HRV_footprint_rrHRV_shift(2),'%+1.2f') ')'])
+        set(F.htextFootprint_rrHRV_shift,'String',[num2str(HRV_footprint_rrHRV_shift(1),'%+1.2f') ',' num2str(HRV_footprint_rrHRV_shift(2),'%+1.2f')])
         set(F.htextFootprint_meanrr,'String',[num2str(1000*HRV_footprint_meanrr,'%1.0f') ' | ' num2str(60/HRV_footprint_meanrr,'%3.0f')])
         set(F.htextFootprint_sdnn,'String',num2str(1000*HRV_footprint_sdnn,'%1.1f'))
         set(F.htextFootprint_rmssd,'String',num2str(1000*HRV_footprint_rmssd,'%1.1f'))

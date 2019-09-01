@@ -1,4 +1,4 @@
-function [record, signals, start_date] = read_edf(fname, qdl)
+function [record, signals, start_date, header, header2] = read_edf(fname, qdl, memory)
 % Read European Data Format
 %
 % Reads the signals information and raw signal data stored in a binary file
@@ -40,14 +40,18 @@ function [record, signals, start_date] = read_edf(fname, qdl)
 %      http://www.edfplus.info/specs/edf.html
 %
 %
-%   MIT License (MIT) Copyright (c) 2017 Marcus Vollmer,
+%   MIT License (MIT) Copyright (c) 2017-2019 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 26 May 2017
-%   version: 0.01
+%   last modified: 03 July 2019
+%   version: 0.04
 
 if nargin<2 || isempty(qdl)
     qdl=0;
+end
+
+if nargin<3 || isempty(memory)
+    memory=0;
 end
 
 fid = fopen(fname,'r');
@@ -103,26 +107,51 @@ signals = table();
     signals.scale = (signals.physical_maximum-signals.physical_minimum)./(signals.digital_maximum-signals.digital_minimum);
     signals.translation = signals.physical_maximum - signals.scale.*signals.digital_maximum;
     signals.Fs = signals.n/n_duration;
-    
-% Read Signals
-data = fread(fid,'int16');
-if qdl==0
-    record = struct;
-    % nr of samples[i] * integer : i-th signal
-        for i=1:n_signals
-            tmp = (repmat(sum(signals.n(1:(i-1)))+(1:signals.n(i)), n_records, 1) + sum(signals.n)*repmat(0:(n_records-1), signals.n(i), 1)')';
-            record.(matlab.lang.makeValidName(signals.name{i})) = signals.translation(i) + signals.scale(i)*data(tmp(:));
-        end
-else
-    [i,v] = listdlg('PromptString','Select a signal:', 'SelectionMode','single', 'ListString',signals.name);
-    if v==1
-    % nr of samples[i] * integer : i-th signal
-        tmp = (repmat(sum(signals.n(1:(i-1)))+(1:signals.n(i)), n_records, 1) + sum(signals.n)*repmat(0:(n_records-1), signals.n(i), 1)')';
-        record = signals.translation(i) + signals.scale(i)*data(tmp(:));
-        signals = signals.Fs(i);
-    end
-end
 
-fclose(fid);
+    
+if memory==1
+    %Memory saving mode
+    record = struct;
+    for i=1:n_signals
+        record.(matlab.lang.makeValidName(signals.name{i})) = zeros(n_records*signals.n(i),1);
+    end
+    
+    % Read Signals
+    for j=1:n_records
+        data = fread(fid,sum(signals.n),'int16');
+        for i=1:n_signals 
+            record.(matlab.lang.makeValidName(signals.name{i}))(((j-1)*signals.n(i)+1):(j*signals.n(i))) = signals.translation(i) + signals.scale(i)*data((sum(signals.n(1:i-1))+1):sum(signals.n(1:i)));
+        end
+    end
+    fclose(fid);
+  
+    
+else
+    % Read Signals
+    data = fread(fid,'int16=>int16');
+    if qdl==0
+        record = struct;
+        % nr of samples[i] * integer : i-th signal
+            for i=1:n_signals
+                tmp = (repmat(sum(signals.n(1:(i-1)))+(1:signals.n(i)), n_records, 1) + sum(signals.n)*repmat(0:(n_records-1), signals.n(i), 1)')';
+                record.(matlab.lang.makeValidName(signals.name{i})) = signals.translation(i) + signals.scale(i)*data(tmp(:));
+            end
+    else
+        if sum(strcmp(qdl,signals.name))==1
+            v = 1;
+            i = find(strcmp(qdl,signals.name));
+        else
+            [i,v] = listdlg('PromptString','Select a signal:', 'SelectionMode','single', 'ListString',signals.name);
+        end
+        if v==1
+        % nr of samples[i] * integer : i-th signal
+            tmp = (repmat(sum(signals.n(1:(i-1)))+(1:signals.n(i)), n_records, 1) + sum(signals.n)*repmat(0:(n_records-1), signals.n(i), 1)')';
+            record = signals.translation(i) + signals.scale(i)*data(tmp(:));
+            signals = signals.Fs(i);
+        end
+    end
+
+    fclose(fid);
+end
 
 end
