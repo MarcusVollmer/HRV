@@ -535,7 +535,17 @@ a.button,a.button_windows,a.button_matlab,a.button_linux,a.button_mac {
   line-height: 1.2;
   color: #fff;
 }
-a.button small,a.button_windows small,a.button_matlab small,a.button_linux small,a.button_mac small {
+a.button_paper {
+  width: 134px;
+  height: 58px;
+  padding-top: 22px;
+  padding-left: 68px;
+  font-family: 'Architects Daughter', 'Helvetica Neue', Helvetica, Arial, serif;
+  font-size: 23px;
+  line-height: 1.2;
+  color: #000;
+}
+a.button small,a.button_windows small,a.button_matlab small,a.button_linux small,a.button_mac small,a.button_paper small {
   display: block;
   font-size: 11px;
 }
@@ -585,6 +595,14 @@ aside a.button_matlab {
   margin-bottom: 20px;
   font-size: 21px;
   background: transparent url(../images/download-button_matlab.png) 0 0 no-repeat;
+}
+aside a.button_paper {
+  display: block;
+  width: 138px;
+  padding-left: 64px;
+  margin-bottom: 20px;
+  font-size: 21px;
+  background: transparent url(../images/download-button_paper.png) 0 0 no-repeat;
 }
 
 pre_manual {
