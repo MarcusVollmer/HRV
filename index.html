@@ -20,7 +20,7 @@
     <header>
     <div class="myinner">
       <div class="inner">
-        <h1 class="rrfp">HRVTool<font size="+3"><sub> 1.04</sub></font></h1>
+        <h1 class="rrfp">HRVTool<font size="+3"><sub> 1.05</sub></font></h1>
         <h2>Analyzing Heart Rate Variability</h2>
         <a href="https://github.com/MarcusVollmer/HRV" class="button"><small>View project on</small> GitHub</a>
       </div>
@@ -34,19 +34,29 @@
 <a id="whats-new" class="anchor" href="#whats-new" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's new?</h3>
 
 <p>
+<font size="-2">10 September 2020</font><br>
+The new Version 1.05 is online. The <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">Matlab App</a> is ready for installation.
+What's new: The toolbox is ready to <b>import ECG-PDFs (*.pdf) from Apple Watch and AliveCor Kardia</b> that works on all main OS (MacOS, Windows, Linux/UNIX). It also imports the beat ticks (annotations) that comes with the PDF. All you need is a free installation of <a href="https://inkscape.org/" alt="Download Inkscape">Inkscape</a> and you need to start Matlab with administrator rights. For Linux systems a faster solution exist when having the packages <a href="https://cityinthesky.co.uk/opensource/pdf2svg/" alt="Download pdf2svg">pdf2svg</a> and <a href="https://pypi.org/project/pdfminer/" alt="Download pdfminer">pdfminer</a> installed. For the import of PDFs in batch mode you can use the function <a href="https://github.com/MarcusVollmer/HRV/blob/master/read_pdf.m" alt="Link to the function read_pdf">read_pdf</a> that converts the pdf to Matlab structure. It's now possible to <b>save the annotations as EDF files</b> and to <b>import signals and annotations from workspace variables</b>. Therefore you need to cancel the import of a file, that automatically directs you to a selection dialog of workspace variables. This is also working when loading annotations. Moreover, the power spectrum was not squared, which is now corrected. The table of HRV parameters contains no Approximate Entropy ApEn.
+</p>
+<p>
+<font size="-2">10 September 2020</font><br>
+The poster describing the Toolbox that was presentend at the CinC2020 is available <a href="files/poster_hrvtool.pdf" alt="Link to the poster">here</a>. It describes briefly the different buttons (scroll further down).<br>
+
+</p>
+<p>
 <font size="-2">18 February 2020</font><br>
 The toolbox was presented in Sptember 2019 in Singapore at the Computing in Cardiology conference. The <a href="files/paper_tool.pdf">paper</a> decribing the toolbox is published in the conference proceedings. Please take note of the citation information at the end of this page.
 </p>
 <p>
 <font size="-2">01 September 2019</font><br>
-The new Version 1.04 is online. The <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">Matlab App</a> is ready for installation.
-Whats new: EDF import function improved to save memory. Saving of pdf-screenshots now with resolution selection with light colors. MIB/MIBF (Machine Independent Beat file, '*.mib', '*.mibf') supported from GE Marquette holter devices. 
+The new Version 1.04 is online. 
+What's new: EDF import function improved to save memory. Saving of pdf-screenshots now with resolution selection with light colors. MIB/MIBF (Machine Independent Beat file, '*.mib', '*.mibf') supported from GE Marquette holter devices. 
 </p>
 
 <p>
 <font size="-2">18 March 2019</font><br>
 The new Version 1.03 is online.
-Whats new: Added functionality for editing annotations (align all or local beats to next negative or positive peak, button to show/hide beat annotations). Added button to normalize the local waveform. Changed function to animate waveform data. Increased readability of code. Selection of a color scheme (dark, light and user mode). Automated resizing of fonts and setting of the font size by button. Compatibility to R2018b/R2019a.
+What's new: Added functionality for editing annotations (align all or local beats to next negative or positive peak, button to show/hide beat annotations). Added button to normalize the local waveform. Changed function to animate waveform data. Increased readability of code. Selection of a color scheme (dark, light and user mode). Automated resizing of fonts and setting of the font size by button. Compatibility to R2018b/R2019a.
 </p>
 
 <p>
@@ -64,7 +74,7 @@ Whats new: Added functionality for editing and saving annotations (add and remov
 <p>
 <font size="-2">23 October 2018</font><br>
 The new Version 1.00 is online. 
-Whats new: You are now able to read the '*.acq' files from BIOPAC devices.
+What's new: You are now able to read the '*.acq' files from BIOPAC devices.
 </p>
 
 <p>
@@ -78,7 +88,7 @@ The first videos of the English tutorial is finally online. It starts with:
 <p>
 <font size="-2">04 October 2017</font><br>
 The new Version 0.99 is online. You can install the  <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">App for Matlab</a>.
-Whats new: You are now able to read the '*.edf' files - the European Data Format - a standard format for medical time series. You are able to select the appropriate signal channel by menu selection. Corrected calculation for Approximate Entropy ApEn in the HRV.m class (included some division instead of substration). Thanks to Sebastian for reporting this bug.
+What's new: You are now able to read the '*.edf' files - the European Data Format - a standard format for medical time series. You are able to select the appropriate signal channel by menu selection. Corrected calculation for Approximate Entropy ApEn in the HRV.m class (included some division instead of substration). Thanks to Sebastian for reporting this bug.
 </p>
 
 <p>
@@ -90,19 +100,19 @@ Whats new: You are now able to read the '*.csv' files with a comma as a decimal 
 <p>
 <font size="-2">19 January 2017</font><br>
 The new Version 0.97 is online.
-Whats new: You are now able to read the ECG from '*.wav' files which are generated from Hexoskin products using the binary file export (explanation on <a href="http://support.hexoskin.com/customer/portal/articles/1758581-how-do-i-convert-binary-data-downloaded-from-the-dashboard-" alt="Link to the description of getting binary data using Hexoskin wearable shirts">Hexoskin support website</a>).
+What's new: You are now able to read the ECG from '*.wav' files which are generated from Hexoskin products using the binary file export (explanation on <a href="http://support.hexoskin.com/customer/portal/articles/1758581-how-do-i-convert-binary-data-downloaded-from-the-dashboard-" alt="Link to the description of getting binary data using Hexoskin wearable shirts">Hexoskin support website</a>).
 </p>
 
 <p>
 <font size="-2">29 June 2016</font><br>
 The new Version 0.96 is online.
-Whats new: The application runs with its basic parts independently from additional Matlab Toolboxes. That's why we have created some helper functions which are stored in the class HRV.m. Many thanks to Stefan Frenzel who forced this change and who has written the most helper functions.
+What's new: The application runs with its basic parts independently from additional Matlab Toolboxes. That's why we have created some helper functions which are stored in the class HRV.m. Many thanks to Stefan Frenzel who forced this change and who has written the most helper functions.
 </p>
 
 <p>
 <font size="-2">01 June 2016</font><br>
 The new Version 0.95 is online.
-Whats new: You can now load <b>long term raw data (24h-ECGs)</b>. An additional beat annotation file can be loaded additionally. Otherwise the integrated heart beat detector will do the annotation for you (on basis of 5 minute segements of your raw data to save memory). In this case you will be asked for the waveform type (Human ECG, Human Pulsatile or Rat ECG). "Fast" settings uses a downsampling step. Other waveform types can be added and parameter settings can be changed manually in order to improve the heart beat detection. The annotation file can be saved separetely. According to the analysis of long term data you are able to type the <b>local period in another format</b>: "00:03:00..00:03:30" (HH:MM:SS..HH:MM:SS) in addition to "180:210" (SS:SS).
+What's new: You can now load <b>long term raw data (24h-ECGs)</b>. An additional beat annotation file can be loaded additionally. Otherwise the integrated heart beat detector will do the annotation for you (on basis of 5 minute segements of your raw data to save memory). In this case you will be asked for the waveform type (Human ECG, Human Pulsatile or Rat ECG). "Fast" settings uses a downsampling step. Other waveform types can be added and parameter settings can be changed manually in order to improve the heart beat detection. The annotation file can be saved separetely. According to the analysis of long term data you are able to type the <b>local period in another format</b>: "00:03:00..00:03:30" (HH:MM:SS..HH:MM:SS) in addition to "180:210" (SS:SS).
 </p>
 
 <p>
@@ -115,11 +125,7 @@ We are working on standalone applications for Mac OS X, Linux an Windows 64bit. 
 <h3>
 <a id="hrv---what" class="anchor" href="#hrv---what" aria-hidden="true"><span class="octicon octicon-link"></span></a>HRV - what?</h3>
 
-<p>Heart Rate Variability (HRV) characterizes the variation of the heart rate when analyzing
-successive cardiac cycles over a fixed measuring period. HRV is a measurand of the
-neurovegetative activity and autonomic function of the heart and describes the ability of the
-heart to change time intervals from one heart beat to the next, continually and without
-overloading, and to flexibly adjust to different overloads.</p>
+<p>Heart Rate Variability (HRV) characterizes the variation of the heart rate when analyzing successive cardiac cycles over a fixed measuring period. HRV is a measurand of the neurovegetative activity and autonomic function of the heart and describes the ability of the heart to change time intervals from one heart beat to the next, continually and without overloading, and to flexibly adjust to different overloads.</p>
 <p>
 We use a measurand which uses relative RR intervals.
 Detailed information in the paper or poster:
@@ -133,13 +139,15 @@ Detailed information in the paper or poster:
 <h3>
 <a id="hrvtool---matlab-based-analyzing-software" class="anchor" href="#hrvtool---matlab-based-analyzing-software" aria-hidden="true"><span class="octicon octicon-link"></span></a>HRVTool - MATLAB based analyzing software?</h3>
 
-<p>HRVTool is a application for Matlab R2014b or later releases. It is made for scientists and ordinary people who wants to get know about their Heart Rate Variability. You need just a valid version of Matlab.
+<p>HRVTool is a application for Matlab R2016b or later releases. It is made for scientists and ordinary people who wants to get know about their Heart Rate Variability. You need just a valid version of Matlab.
 <pre align="center">
-<img src="images/screenshot_small.png" alt="A screenshot of the program." border="0">
+<img src="images/screenshot_small.png" alt="A screenshot of the program." border="0"><br>
+<a href="images/HRVTool_screen.png" alt="Click for a larger image."><img src="images/HRVTool_screen_small.png" alt="Discription of the buttons." border="0"></a>
+
 </pre>
 Detailed information in the conference proceedings of Computing in Cardiology:
 <pre align="center">
-<a href="files/paper_tool.pdf"><img src="images/paper_tool.png" alt="Get the paper." border="0"></a>
+<a href="files/paper_tool.pdf"><img src="images/paper_tool.png" alt="Get the paper." border="0"></a><a href="files/poster_hrvtool.pdf"><img src="images/poster_hrvtool.png" alt="Get the poster." border="0"></a>
 </pre>
 
 </p>
@@ -152,7 +160,7 @@ Detailed information in the conference proceedings of Computing in Cardiology:
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/80x15.png" /></a><br />This articles are licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
 <pre align="center">
 @inproceedings{vollmer2019hrvtool,
-  title     = {{HRVTool - an Open-Source Matlab Toolbox for Analyzing Heart Rate Variability}},
+  title     = {{HRVTool -- an Open-Source Matlab Toolbox for Analyzing Heart Rate Variability}},
   author    = {Vollmer, Marcus},
   booktitle = {{Computing in Cardiology 2019}},
   volume    = {46},
