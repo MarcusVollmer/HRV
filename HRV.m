@@ -102,11 +102,11 @@ classdef HRV
 %       I want to thank Stefan Frenzel for providing source code for the
 %       helper functions nanmin, nanmax, nansum, nanmedian, nanmean, nanstd
 %
-%   MIT License (MIT) Copyright (c) 2015 Marcus Vollmer,
+%   MIT License (MIT) Copyright (c) 2015-2020 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 04 October 2017
-%   version: 0.20
+%   last modified: 06 August 2020
+%   version: 0.3
 
     properties
     end
@@ -832,11 +832,12 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF,f,Y,NFFT] = fft_val_fun(RR,Fs,type)
         f = Fs/2*linspace(0,1,NFFT/2+1);  
 
         YY = 2*abs(Y(1:NFFT/2+1));
-
+        YY = YY.^2;
+        
         VLF = sum(YY(f<=.04));
-        LF = sum(YY(f<=.15))-VLF;  
-        HF = sum(YY(f<=.4))-VLF-LF;
-        TP = sum(YY(f<=.4));
+        LF  = sum(YY(f<=.15))-VLF;  
+        HF  = sum(YY(f<=.4))-VLF-LF;
+        TP  = sum(YY(f<=.4));
 
         pLF = LF/(TP-VLF)*100;
         pHF = HF/(TP-VLF)*100;    
@@ -881,8 +882,8 @@ function [pLF,pHF,LFHFratio,VLF,LF,HF] = fft_val(RR,num,Fs,type,overlap)
         pLF = NaN(size(RR));
         pHF = NaN(size(RR));
         VLF = NaN(size(RR));
-        LF = NaN(size(RR));
-        HF = NaN(size(RR));
+        LF  = NaN(size(RR));
+        HF  = NaN(size(RR));
         LFHFratio = NaN(size(RR));
         
         if overlap==1
@@ -970,32 +971,63 @@ function [SD1,SD2,SD1SD2ratio] = returnmap_val(RR,num,flag,overlap)
     SD1SD2ratio = SD1./SD2;
 end
 
-function hr = HR(RR,num) 
+function hr = HR(RR,num,segment) 
 %HR Average heart rate.
-%   hr = HR(RR,num) is the average heart rate of NN intervals.
+%   hr = HR(RR,num,segment) is the average heart rate of NN intervals.
 %   RR is a vector containing RR intervals in seconds.
-%   num specifies the number of successive values for which the local
-%   average heart rate will be computed.
-%   If num equals 0, the global haert rate will be computed.
+%   num specifies the number of successive intervals for which the local
+%   average heart rate will be computed or if segements is set different to
+%   zero, it specifies the rolling window in seconds.
+%   If num equals 0, the heart rate of the entire sequence is computed.
 %   hr is a column vector with the same length as RR.
 %
-%   Example: If RR = repmat([1 .9],1,5),
-%      then HRV.HR(RR,7) is [60.0000;63.1579;62.0690;63.1579;62.5000;...
-%      63.1579;62.6866;63.6364;62.6866;63.6364].
+%   Example: 
+%      If RR = repmat([1 .9],1,5), then HRV.HR(RR,7) is
+%      [60.0000;63.1579;62.0690;63.1579;62.5000;63.1579;62.6866;63.6364;
+%      62.6866;63.6364].
+%
+%      HR = repmat(60,30,1);
+%      RR = [normrnd(1,.005,size(HR,1)/3,3)-repmat([-.045 .05 .025],...
+%      size(HR,1)/3,1)]';
+%      Segmentwise heart rate for 5 second segements can be extracted using
+%      HRV.HR(RR,5,1).
+%      
+
     
     RR = RR(:);
     if nargin<2 || isempty(num)
         num = 0;
-    end   
+    end 
+    if nargin<3 || isempty(segment)
+        segment = 0;
+    end 
     
+
     if num==0
-        hr = 60*sum(double(~isnan(RR)))./HRV.nansum(RR); 
+        hr = 60*sum(~isnan(RR))./HRV.nansum(RR); 
     else
-        ts = NaN(length(RR),num);
-        for j=1:num
-            ts(j:end,j) = RR(1:end-j+1);
+        if segment==0
+            % Constant number of RR intervals            
+            ts = NaN(length(RR),num);
+            for j=1:num
+                ts(j:end,j) = RR(1:end-j+1);
+            end
+            hr = 60*sum(~isnan(ts),2)./HRV.nansum(ts,2);
+        else
+            % Process RR intervals of the last 'num' seconds
+            ts = NaN(length(RR),num*5);
+            RR = flipud(RR);
+            sumRR = cumsum(RR);
+            tmp = 0;
+            for j=length(RR):-1:1
+                tmpRR = RR(1:sum(sumRR<=(num+tmp)));
+                ts(j,length(tmpRR):-1:1) = tmpRR;                
+                tmp = sumRR(1);
+                RR = RR(2:end);
+                sumRR = sumRR(2:end);
+            end
+            hr = 60*sum(~isnan(ts),2)./HRV.nansum(ts,2);
         end
-        hr = 60*sum(double(~isnan(ts)),2)./HRV.nansum(ts,2); 
     end
 end
 
@@ -1265,23 +1297,23 @@ end
 function m = nanmin(x,y,varargin)
     if (nargin == 1) %one variable only
         xnan = isnan(x);
-        x(xnan) = inf;
+        x(xnan) = Inf;
         m = min(x);
         m(all(xnan)) = NaN;
     elseif (nargin == 2) %two variables
-        xnan = isnan(x); x(xnan) = inf;
-        ynan = isnan(y); y(ynan) = inf;      
+        xnan = isnan(x); x(xnan) = Inf;
+        ynan = isnan(y); y(ynan) = Inf;      
         m = min(x,y);
         m(xnan & ynan) = NaN;
     elseif (nargin >= 3)        
         dim = varargin{1};
-        xnan = isnan(x); x(xnan) = inf;
-        ynan = isnan(y); y(ynan) = inf;
+        xnan = isnan(x); x(xnan) = Inf;
+        ynan = isnan(y); y(ynan) = Inf;
         m = min(x, y, dim);
         if isempty(y) %one variable, dimension specified                  
-            m(all(xnan,dim)) = nan;               
+            m(all(xnan,dim)) = NaN;               
         else %two variables, dimension specified
-            m(xnan & ynan) = nan;
+            m(xnan & ynan) = NaN;
         end
     end    
 end
@@ -1290,23 +1322,23 @@ end
 function m = nanmax(x,y,varargin)
     if (nargin == 1) %one variable only
         xnan = isnan(x);
-        x(xnan) = inf;
+        x(xnan) = -Inf;
         m = max(x);
         m(all(xnan)) = NaN;
     elseif (nargin == 2) %two variables
-        xnan = isnan(x); x(xnan) = inf;
-        ynan = isnan(y); y(ynan) = inf;      
+        xnan = isnan(x); x(xnan) = -Inf;
+        ynan = isnan(y); y(ynan) = -Inf;      
         m = max(x,y);
         m(xnan & ynan) = NaN;
     elseif (nargin >= 3)        
         dim = varargin{1};
-        xnan = isnan(x); x(xnan) = inf;
-        ynan = isnan(y); y(ynan) = inf;
+        xnan = isnan(x); x(xnan) = -Inf;
+        ynan = isnan(y); y(ynan) = -Inf;
         m = max(x, y, dim);
         if isempty(y) %one variable, dimension specified                  
-            m(all(xnan,dim)) = nan;               
+            m(all(xnan,dim)) = NaN;               
         else %two variables, dimension specified
-            m(xnan & ynan) = nan;
+            m(xnan & ynan) = NaN;
         end
     end    
 end

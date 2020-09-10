@@ -3,7 +3,7 @@ function HRVTool
 %  
 % Analyzing Heart Rate Variability
 % Licensed under MIT.
-% Copyright (c) 2015-2019 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)
+% Copyright (c) 2015-2020 Marcus Vollmer (http://marcusvollmer.github.io/HRV/)
 %
 % Icons licensed under MIT.
 % Copyright (c) 2014 Drifty (http://drifty.com/)
@@ -11,16 +11,16 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.04
+% Version: 1.05
 % Author: Marcus Vollmer
-% Date: 01 September 2019
+% Date: 10 September 2020
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq, 'ResizeFcn', @my_resizereq);
 set(gcf,'Units','inches');
 
 global icons qrs_settings AppPath HRVTool_version HRVTool_version_date font_size font_size_factor colormode clr screenposition
-HRVTool_version = 1.04;
-HRVTool_version_date = '01 September 2019';
+HRVTool_version = 1.05;
+HRVTool_version_date = '10 September 2020';
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4));
 
@@ -106,11 +106,13 @@ load('qrs_settings.mat')
     F.htextLabel_pnn50          = uicontrol('Parent',F.hpResults,'Style','text','String','pNN50','Units','normalized','Position',[label_column .45 label_column_width .05],'TooltipString','unit: %');
     F.htextLabel_tri            = uicontrol('Parent',F.hpResults,'Style','text','String','TRI','Units','normalized','Position',[label_column .4 label_column_width .05]);
     F.htextLabel_tinn           = uicontrol('Parent',F.hpResults,'Style','text','String','TINN','Units','normalized','Position',[label_column .35 label_column_width .05],'TooltipString','unit: ms');
-    F.htextLabel_sd1sd2         = uicontrol('Parent',F.hpResults,'Style','text','String','SD1 | SD2','Units','normalized','Position',[label_column .3 label_column_width .05],'TooltipString','units: ms');
-    F.htextLabel_sd1sd2ratio    = uicontrol('Parent',F.hpResults,'Style','text','String','SD1/SD2 ratio','Units','normalized','Position',[label_column .25 label_column_width .05]);
-    F.htextLabel_lfhf           = uicontrol('Parent',F.hpResults,'Style','text','String','LF | HF','Units','normalized','Position',[label_column .2 label_column_width .05],'TooltipString','normalized units: %');
-    F.htextLabel_lfhfratio      = uicontrol('Parent',F.hpResults,'Style','text','String','LF/HF ratio','Units','normalized','Position',[label_column .15 label_column_width .05]);
+    F.htextLabel_apen           = uicontrol('Parent',F.hpResults,'Style','text','String','ApEn','Units','normalized','Position',[label_column .3 label_column_width .05],'TooltipString','Approximate entropy');
+    F.htextLabel_sd1sd2         = uicontrol('Parent',F.hpResults,'Style','text','String','SD1 | SD2','Units','normalized','Position',[label_column .25 label_column_width .05],'TooltipString','units: ms');
+    F.htextLabel_sd1sd2ratio    = uicontrol('Parent',F.hpResults,'Style','text','String','SD1/SD2 ratio','Units','normalized','Position',[label_column .2 label_column_width .05]);
+    F.htextLabel_lfhf           = uicontrol('Parent',F.hpResults,'Style','text','String','LF | HF','Units','normalized','Position',[label_column .15 label_column_width .05],'TooltipString','normalized units: %');
+    F.htextLabel_lfhfratio      = uicontrol('Parent',F.hpResults,'Style','text','String','LF/HF ratio','Units','normalized','Position',[label_column .1 label_column_width .05]);
 
+    
     F.htextGlobal_rrHRV_median  = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .775 column_width .05]);
     F.htextGlobal_rrHRV_iqr     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .725 column_width .05]);
     F.htextGlobal_rrHRV_shift   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .675 column_width .05]);
@@ -120,10 +122,11 @@ load('qrs_settings.mat')
     F.htextGlobal_pnn50         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .45 column_width .05]);
     F.htextGlobal_tri           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .4 column_width .05]);
     F.htextGlobal_tinn          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .35 column_width .05]);
-    F.htextGlobal_sd1sd2        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .3 column_width .05]);
-    F.htextGlobal_sd1sd2ratio   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .25 column_width .05]);
-    F.htextGlobal_lfhf          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .2 column_width .05]);
-    F.htextGlobal_lfhfratio     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .15 column_width .05]);
+    F.htextGlobal_apen          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .3 column_width .05]);
+    F.htextGlobal_sd1sd2        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .25 column_width .05]);
+    F.htextGlobal_sd1sd2ratio   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .2 column_width .05]);
+    F.htextGlobal_lfhf          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .15 column_width .05]);
+    F.htextGlobal_lfhfratio     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[global_column .1 column_width .05]);
 
     F.htextLocal_rrHRV_median   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .775 column_width .05]);
     F.htextLocal_rrHRV_iqr      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .725 column_width .05]);
@@ -134,10 +137,11 @@ load('qrs_settings.mat')
     F.htextLocal_pnn50          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .45 column_width .05]);
     F.htextLocal_tri            = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .4 column_width .05]);
     F.htextLocal_tinn           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .35 column_width .05]);
-    F.htextLocal_sd1sd2         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .3 column_width .05]);
-    F.htextLocal_sd1sd2ratio    = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .25 column_width .05]);
-    F.htextLocal_lfhf           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .2 column_width .05]);
-    F.htextLocal_lfhfratio      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .15 column_width .05]);
+    F.htextLocal_apen           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .3 column_width .05]); 
+    F.htextLocal_sd1sd2         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .25 column_width .05]);
+    F.htextLocal_sd1sd2ratio    = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .2 column_width .05]);
+    F.htextLocal_lfhf           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .15 column_width .05]);
+    F.htextLocal_lfhfratio      = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[local_column .1 column_width .05]);
 
     F.htextFootprint_rrHRV_median  = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .775 column_width .05],'visible','off');
     F.htextFootprint_rrHRV_iqr     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .725 column_width .05],'visible','off');
@@ -148,10 +152,11 @@ load('qrs_settings.mat')
     F.htextFootprint_pnn50         = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .45 column_width .05]);
     F.htextFootprint_tri           = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .4 column_width .05]);
     F.htextFootprint_tinn          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .35 column_width .05]);
-    F.htextFootprint_sd1sd2        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .3 column_width .05]);
-    F.htextFootprint_sd1sd2ratio   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .25 column_width .05]);
-    F.htextFootprint_lfhf          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .2 column_width .05]);
-    F.htextFootprint_lfhfratio     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .15 column_width .05]);
+    F.htextFootprint_apen          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .3 column_width .05]);
+    F.htextFootprint_sd1sd2        = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .25 column_width .05]);
+    F.htextFootprint_sd1sd2ratio   = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .2 column_width .05]);
+    F.htextFootprint_lfhf          = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .15 column_width .05]);
+    F.htextFootprint_lfhfratio     = uicontrol('Parent',F.hpResults,'Style','text','String','','Units','normalized','Position',[footprint_column .1 column_width .05]);
 
 
 % Edit fields
@@ -226,6 +231,7 @@ load('qrs_settings.mat')
     F.hbuttonSaveAs = uicontrol('Parent',F.hpResults,'String','save as','Units','normalized','Position',[.85 0 .15 .05],'TooltipString','save as png, pdf, csv or mat-file','visible','off','Callback', @buttonSaveAs_Callback);
     F.hbuttonCopy   = uicontrol('Parent',F.hpResults,'String','copy','Units','normalized','Position',[.7 0 .15 .05],'TooltipString','copy to clipboard','visible','off','Callback', @buttonCopy_Callback);
 
+    F.hbuttonFullScreen = uicontrol('Parent',F.hpFootline,'String','','Units','normalized','Position',[.975 .025 .0225 .95],'TooltipString','Activate fullscreen mode','Callback', @buttonFullscreen_Callback);
 
 % Axes
     F.ha1  = axes('Parent',F.hpIntervals,'Position',[.05 .15 .825 .65],'Units','normalized','Layer','top','visible','off'); 
@@ -246,16 +252,16 @@ load('qrs_settings.mat')
 
 % Global Variables
 global always LocalRange FootprintRange Position my_title;
-global sig sig_waveform unit name name_org Fs Ann Ann_complete Ann_type imported;
+global sig sig_waveform unit name name_org Fs StartDate Ann Ann_complete Ann_type imported;
 global d_fs Beat_min Beat_max wl_tma wl_we;
 global RR RRorg RRfilt center relRR relRR_pct RR_loc rr_loc;
 global showWaveform showBeats showIntervals showProportions RMtype RMnumbers showFootprint showPDF RMmarkersize;
 global filter_limit my_artifacts;
 global signal_num MeasuresNum HfNum Overlap legendpos hAx hLine1 hLine2 vis showTINN showLFHF;
-global HRV_rr_med HRV_rr_iqr HRV_rr_shift HRV_hf HRV_rmssd HRV_sdnn HRV_sdsd HRV_pnn50 HRV_tri HRV_tinn HRV_sd1sd2ratio HRV_lfhfratio;
-global HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio;
-global HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio;
-global HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio;
+global HRV_rr_med HRV_rr_iqr HRV_rr_shift HRV_hf HRV_rmssd HRV_sdnn HRV_sdsd HRV_pnn50 HRV_tri HRV_tinn HRV_apen HRV_sd1sd2ratio HRV_lfhfratio;
+global HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_apen HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio;
+global HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_apen HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio;
+global HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_apen HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio;
 global speed fp_RR fp_rr;
 global S;
 global FileName PathName;
@@ -392,7 +398,11 @@ function buttonStart_Callback(hObject, eventdata, handles)
     STR = get(F.hpopupSubject,'String');
     
     FileName = STR{VAL};
-    fileextention = FileName(max(strfind(FileName,'.'))+1:end);
+    if ~isempty(PathName)
+        fileextention = FileName(max(strfind(FileName,'.'))+1:end);
+    else 
+        fileextention = 'mat';
+    end
     
     delete(get(F.ha1,'Children'));  
     delete(get(F.ha2,'Children'));  
@@ -428,6 +438,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
     drawnow
     imported = 0;
     switch lower(fileextention)
+        
 % Load HRM files
         case 'hrm'
             fileID = fopen([get(F.heditFolder,'String') FileName],'r');
@@ -460,8 +471,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
             sig = zeros(max(Ann)+1,1);
             sig(Ann+1,1)=1;
             unit = {'Impulse'};
-            imported = 1;
-  
+            imported = 1;  
               
 % Load PhysioNet annotation file or ISHNE file
         case {'ecg'}             
@@ -594,74 +604,115 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 warndlg('Cannot find ''rdann''. Please install and set the path to the WFDB Toolbox from PhysioNet.org.')
             end
 
-% Load MAT files            
+% Load MAT files for directory or workspace           
         case 'mat'
-            matObj = matfile([get(F.heditFolder,'String') FileName(1:end-4) '.mat']);
-            fn = fieldnames(matObj);
-            data_name = [];
-            
-            % filter fieldnames with numeric type
-            fn_num = zeros(size(fn,1),1);
-            for j=1:size(fn,1)
-                fn_num(j) = isnumeric(matObj.(fn{j}));
+            if isempty(PathName)
+                matObj = evalin('base',FileName);
+            else
+                matObj = matfile([get(F.heditFolder,'String') FileName(1:end-4) '.mat']);
             end
-            switch sum(fn_num)
-                case 0
-                    warndlg('There is no numeric data inside the mat-file.')
-                case 1                    
-                    data_name = fn{find(fn_num)};                    
-                otherwise
-                    str = fn(find(fn_num));
-                    [s,v] = listdlg('PromptString','Select a file:',...
-                        'SelectionMode','single','ListString',str);
-                    if v>0
-                        data_name = str{s};
+            
+          % Structured array or vector
+            if isstruct(matObj)
+                fn = fieldnames(matObj);
+                data_name = [];
+
+                % filter fieldnames with numeric type
+                fn_num = zeros(size(fn,1),1);
+                for j=1:size(fn,1)
+                    fn_num(j) = isnumeric(matObj.(fn{j}));
+                end
+
+                % Search for struct 'ECG' that contains ecg leads
+                if sum(fn_num)==0
+                    fn_ecg = contains(fn,'ECG','IgnoreCase',true);
+                    if sum(fn_ecg)>0
+                        fn_ecg_pos = find(fn_ecg);
+                        matObj = matObj.(fn{fn_ecg_pos(1)});
+                        fn = fieldnames(matObj);
+                        % filter fieldnames with numeric type
+                        fn_num = zeros(size(fn,1),1);
+                        for j=1:size(fn,1)
+                            fn_num(j) = isnumeric(matObj.(fn{j}));
+                        end
                     end
+                end
+
+                switch sum(fn_num)
+                    case 0
+                        warndlg('There is no numeric data inside the mat-file.')
+                    case 1                    
+                        data_name = fn{find(fn_num)};                    
+                    otherwise
+                        str = fn(find(fn_num));
+                        [s,v] = listdlg('PromptString','Select a file:',...
+                            'SelectionMode','single','ListString',str);
+                        if v>0
+                            data_name = str{s};
+                        end
+                end
+                Ann = [];
+                RR = [];
+            else
+                matObj = struct(FileName,matObj);
+                data_name = FileName;                
             end
-            Ann = [];
-            RR = [];
-            
+
             if ~isempty(data_name)
                 prompt = {'Enter type of data (waveform (w), RR intervals (RR), Annotations (Ann)):',...
                 'Enter sampling frequency (Hz):'};
                 dlg_title = 'Input';
                 num_lines = 1;
-                def = {'RR intervals','1000'};
+                if isfield(matObj,'Fs')
+                    def = {'RR intervals',num2str(matObj.Fs)};
+                elseif isfield(matObj,'fs')
+                    def = {'RR intervals',num2str(matObj.fs)};
+                else
+                    def = {'RR intervals','1000'};
+                end
                 answer = inputdlg(prompt,dlg_title,num_lines,def);
                 Fs = str2double(answer{2});
 
                 switch answer{1}
                     case {'waveform','w'}
                         sig_waveform = matObj.(data_name);
+                        sig_waveform = sig_waveform(:);
                         dialog_annotationfile
 
-                    case {'RR intervals','rr','RR'}
-                        prompt = {'Is your interval data stored as milliseconds or seconds?):'};
+                    case {'RR intervals','rr','RR','R','r'}
+                        prompt = {'How is your interval data stored?:'};
                         answerI = questdlg(prompt,'Interval format','Milliseconds','Seconds','Milliseconds');
-                        if strcmp(answerI,'Milliseconds')
-                            RR = matObj.(data_name);
-                            Fs = 1000;
-                        else
-                            RR = 1000*matObj.(data_name);
-                            Fs = 1000;
-                        end
-
+                        switch answerI
+                            case 'Frames'
+                                RR = matObj.(data_name);
+                            case 'Milliseconds'
+                                RR = matObj.(data_name);
+                                Fs = 1000;
+                            case 'Seconds'
+                                RR = 1000*matObj.(data_name);
+                                Fs = 1000;
+                        end                        
+                        RR = RR(:);
                         Ann = round(cumsum([0;RR]));
+                        
                         sig = zeros(max(Ann)+1,1);
                         sig(Ann+1,1)=1;        
                         unit = {'Impulse'};  
                         imported = 1;
                         
-                    case {'Annotation','Annotations','Ann','ann'}   
-                        prompt = {'Is your annotation data stored as milliseconds or seconds?):'};
-                        answerI = questdlg(prompt,'Interval format','Milliseconds','Seconds','Milliseconds');
-                        if strcmp(answerI,'Milliseconds')
-                            Ann = matObj.(data_name);
-                        else
-                            Ann = 1000*matObj.(data_name);
+                    case {'Annotation','Annotations','Ann','ann','A','a'}   
+                        prompt = {'How are your beat annotations stored?:'};
+                        answerI = questdlg(prompt,'Interval format','Frames','Milliseconds','Seconds','Milliseconds');
+                        switch answerI
+                            case 'Frames'
+                                Ann = matObj.(data_name);
+                            case 'Milliseconds'
+                                Ann = matObj.(data_name);
+                            case 'Seconds'
+                                Ann = 1000*matObj.(data_name);
                         end
-                        
                         RR = diff(Ann);
+                        
                         sig = zeros(max(Ann)+1,1);
                         sig(Ann+1,1)=1;        
                         unit = {'Impulse'};
@@ -678,9 +729,43 @@ function buttonStart_Callback(hObject, eventdata, handles)
 
 % Load EDF files          
         case 'edf'
-            [sig_waveform, Fs, StartDate] = read_edf([get(F.heditFolder,'String') FileName], 1);
-            sig_waveform = double(sig_waveform);
-            dialog_annotationfile
+            set(F.htextBusy,'String','Busy reading the EDF file.');
+            [record, signals, StartDate] = read_edf([get(F.heditFolder,'String') FileName], 1);
+            if isstruct(record)
+                if isfield(record,'R_peaks')
+                    Fs = signals.Fs(strcmp(signals.name,'R_peaks'));
+                    Ann = record.R_peaks;
+                    RR = diff(Ann);
+                    sig = zeros(max(Ann)+1,1);
+                    sig(Ann+1,1)=1;            
+                    unit = {'Impulse'};
+                    imported = 1;
+                end
+                if length(fieldnames(record))>1 || ~isfield(record,'R_peaks')
+                    [i,v] = listdlg('PromptString','Select a signal:', 'SelectionMode','single', 'ListString',signals.name);
+                    if v==1
+                        sig_waveform = signals.translation(i) + signals.scale(i)*record.(matlab.lang.makeValidName(signals.name{i}));
+                        Fs = signals.Fs(i);
+                        if ~isfield(record,'R_peaks')
+                            dialog_annotationfile
+                        else
+                            unit = {'Waveform'};
+                            set(F.hbuttonShowWaveform, 'String', 'Waveform')
+                            set(F.hbuttonNormalize,'visible','on');
+                            set(F.hbuttonShowWaveform,'visible','on');
+                            set(F.hbuttonShowBeats, 'visible', 'on')
+                            set(F.hbuttonAlignPosPeak,'visible','on');
+                            set(F.hbuttonAlignNegPeak,'visible','on');
+                            set(F.hbuttonAlignAllPosPeak,'visible','on');
+                            set(F.hbuttonAlignAllNegPeak,'visible','on');
+                            imported = 1;
+                        end
+                        q = HRV.nanquantile(sig_waveform',[.05 .5 .95]);
+                        sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
+                    end
+                end    
+            end
+            set(F.htextBusy,'String','');
             
 % Load ACQ files            
         case 'acq'
@@ -717,11 +802,103 @@ function buttonStart_Callback(hObject, eventdata, handles)
             sig = zeros(max(Ann)+1,1);
             sig(Ann+1,1)=1;            
             unit = {'Impulse'};
-            imported = 1;            
+            imported = 1;
             
-       
+% Load AppleWatch PDFs and AliveCor Kardia PDFs 
+        case {'pdf'}            
+            status_1 = 1;
+            status_2 = 1;
+            status_3 = 1;
+            switch isunix + 1*ismac + 3*ispc
+              case 1 % UNIX
+                status_1 = system('command -v pdf2svg');
+                status_2 = system('command -v pdf2txt');
+                status_3 = system('command -v inkscape');
+              case 2 % MAC OS
+                [status_3, cmdout] = system('mdfind -name ''kMDItemFSName=="Inkscape.app"''');
+              case 3 % WINDOWS
+                [status_3] = system('inkscape --help');
+            end
             
- % Load other files
+            if ~(status_1==0 && status_2==0 || status_3==0)
+                warndlg('The import of ECG-PDFs requires the installation of `Inkscape` or the packages `pdf2svg` and `pdf2txt`.')
+            else
+                wt = waitbar(0,'Loading your data ...');
+                record = read_pdf([get(F.heditFolder,'String') FileName]);
+                close(wt)
+                if isfield(record,'start_date')
+                    StartDate = record.start_date;
+                else
+                    StartDate = NaT;
+                end
+
+              % Choose signal
+                if size(record.ecg,1)>1
+                    [i,v] = listdlg('PromptString','Select a signal:', 'SelectionMode','single', 'ListString', record.signalnames);
+                else
+                    i = 1;
+                end
+                sig_waveform = double(record.ecg(i,:));
+                sig_waveform = sig_waveform(:);
+                q = HRV.nanquantile(sig_waveform',[.05 .5 .95]);
+                sig_waveform = (sig_waveform-q(2))/(4*(q(3)-q(1))) +.4;
+    
+                if isfield(record,'Fs')
+                    Fs = record.Fs;
+                else
+                    Fs = NaN;
+                end
+
+                if isfield(record,'ann')
+                    Ann = record.ann(:);
+                    RR = diff(Ann);
+                    if isnan(Fs)
+                        Fs = (mean(RR)*record.bpm)/60;
+                      % Get answer of Fs
+                        if isfield(record,duration)
+                            prompt = {['The record duration is ' record.duration '. The length of the ecg is ' num2str(size(record.ecg,2)) '. Please enter the correct sampling frequency of the record in Hz:']};
+                        else
+                            prompt = {['The length of the ECG is ' num2str(size(record.ecg,2)) '. Please enter the correct sampling frequency of the record in Hz:']};
+                        end
+                        dlgtitle = 'Sampling frequency';
+                        dims = [1 40];
+                        answer = inputdlg(prompt, dlgtitle, dims, cellstr(num2str(Fs)));
+                        Fs = str2double(answer{1});
+                    end
+                else
+                    if isnan(Fs)
+                      % Get answer of Fs
+                        if isfield(record,duration)
+                            prompt = {['The record duration is ' record.duration '. The length of the ecg is ' num2str(size(record.ecg,2)) '. Please enter the correct sampling frequency of the record in Hz:']};
+                        else
+                            prompt = {['The length of the ECG is ' num2str(size(record.ecg,2)) '. Please enter the correct sampling frequency of the record in Hz:']};
+                        end
+                        dlgtitle = 'Sampling frequency';
+                        dims = [1 40];
+                        answer = inputdlg(prompt, dlgtitle, dims, {'300'});
+                        Fs = str2double(answer{1});
+                    end
+                  % Start beat detection
+                    dialog_annotationfile
+
+                    RR = diff(Ann);
+                end
+    
+                sig = zeros(max(Ann)+1,1);
+                sig(Ann+1,1) = 1;
+                unit = {'Impulse'};
+                set(F.hbuttonShowWaveform, 'String', 'Waveform')
+                set(F.hbuttonNormalize,'visible','on');
+                set(F.hbuttonShowWaveform,'visible','on');
+                set(F.hbuttonShowBeats, 'visible', 'on')
+                set(F.hbuttonAlignPosPeak,'visible','on');
+                set(F.hbuttonAlignNegPeak,'visible','on');
+                set(F.hbuttonAlignAllPosPeak,'visible','on');
+                set(F.hbuttonAlignAllNegPeak,'visible','on');
+                imported = 1;
+            end
+            
+% Load other files
         otherwise
             % Open dialog box to load waveform or RR intervals of ordinary
             % text files 
@@ -913,7 +1090,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                     pos = strfind(str,':');
                     xl = [str2double(str(1:min(pos)-1)) str2double(str(max(pos)+1:end))];   
                 else
-                    xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
+                    xl = 24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
                 end
                 set(F.ha1,'Xlim',xl);
 
@@ -929,7 +1106,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 pos = strfind(str,':');
                 xl = [str2double(str(1:min(pos)-1)) str2double(str(max(pos)+1:end))];   
             else
-                xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
+                xl = 24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
             end
             set(F.ha1,'Xlim',xl);
             editLimits  
@@ -979,7 +1156,7 @@ function editLimits_Callback(hObject, eventdata, handles)
         pos = strfind(str,':');
         xl = [str2double(str(1:min(pos)-1)) str2double(str(max(pos)+1:end))];   
     else
-        xl =  24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
+        xl = 24*60*60*[datenum(datetime(str(1:min(pos)-1)))-floor(now) datenum(datetime(str(max(pos)+2:end)))-floor(now)];
     end
     set(F.ha1,'Xlim',xl);
     editLimits
@@ -1099,23 +1276,39 @@ end
 
 
 %% Popups
-function popupSubject_Callback(hObject, eventdata, handles) 
+function popupSubject_Callback(hObject, eventdata, handles)
     calc_on
     buttonStart_Callback
     calc_off
 end
 
 %% BUTTONS
-function buttonCD_Callback(hObject, eventdata, handles) 
-    [FileName,PathName] = uigetfile({'*.*';'*.acq';'*.ann';'*.atr';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.mib';'*.mibf';'*.txt';'*.wav'},'Select the ECG data');
+function buttonCD_Callback(hObject, eventdata, handles)
+    
+    [FileName,PathName] = uigetfile({'*.*';'*.acq';'*.ann';'*.atr';'*.csv';'*.ecg';'*.edf';'*.hrm';'*.hrv';'*.mat';'*.mib';'*.mibf';'*.pdf';'*.txt';'*.wav'},'Select the ECG data');
     if length(PathName)>1
+      % Import file from folder
         set(F.heditFolder,'String',PathName);
         fileextention = FileName(max(strfind(FileName,'.'))+1:end);
 
         subjects = dir([PathName filesep '*.' fileextention]);
         set(F.hpopupSubject,'String',{subjects.name});
         set(F.hpopupSubject,'Value',find(ismember(get(F.hpopupSubject,'String'),FileName)));
-        popupSubject_Callback    
+        popupSubject_Callback
+    else
+      % Import data from workspace
+        baseVarInfo = evalin('base', 'whos'); 
+        [i,v] = listdlg('PromptString','Import workspace variable:', 'SelectionMode','single', 'ListString',{baseVarInfo.name});
+        if v
+            PathName = '';
+            FileName = baseVarInfo(i).name;
+            fileextention = 'mat';
+            
+            subjects = {baseVarInfo.name};
+            set(F.hpopupSubject,'String',subjects);
+            set(F.hpopupSubject,'Value',find(ismember(get(F.hpopupSubject,'String'),FileName)));
+            popupSubject_Callback    
+        end        
     end
 end
 
@@ -1941,7 +2134,7 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
                 answer = questdlg('What is preferred pdf resolution?', ...
                     'Resolution', ...
                     '1280x900','1600x900','1920x1080','1280x900'); 
-                
+                %,'1920x1080'
                 if ~isempty(answer)
                     pos = get(F.fh,'Position');
                     switch answer
@@ -1949,11 +2142,15 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
                             res = [1280 900];
                         case '1600x900'
                             res = [1600 900];
+                        case '1680x1050'
+                            res = [1680 1020];
                         case '1920x1080'
                             res = [1920 1080];                            
                     end
-                    set(F.fh,'Position',[0,0,res(1),res(2)]);
-                    print('-painters','-dpdf', [path file])
+                    res = [1680 1020];
+                    set(F.fh,'PaperSize',res/100);%'outerposition',[0 0 1 1]'Position',[0,0,res(1),res(2)],'outerposition',);
+                    %get(F.fh,'Position')
+                    print('-painters','-fillpage','-dpdf', [path file])
                     set(F.fh,'Position',pos);            
                 end
 
@@ -1963,19 +2160,19 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
                 savefig(F.fh,[path file],'compact')
             case {'csv','mat'}
                 unit_val = [1 1 1 1 1000 60 1000 1000 100 1 1000 1000 1000 1 1 1 1];
-                HRVglobal	 = [HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr 1/HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio].*unit_val;
-                HRVlocal     = [HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr 1/HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio].*unit_val;
+                HRVglobal	 = [HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr 1/HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_apen HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio].*unit_val;
+                HRVlocal     = [HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr 1/HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_apen HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio].*unit_val;
                 if ~isempty(HRV_footprint_rrHRV_median)
-                    HRVfootprint = [HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr 1/HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio].*unit_val;
+                    HRVfootprint = [HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr 1/HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_apen HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio].*unit_val;
                     Results = table(HRVglobal',HRVlocal',HRVfootprint',...
-                    'RowNames',{'rrHRV_median','rrHRV_iqr','rrHRV_shift_x','rrHRV_shift_y','meanrr','hr','sdnn','rmssd','pnn50','tri','tinn','sd1','sd2','sd1sd2ratio','lf','hf','lfhfratio'},...
+                    'RowNames',{'rrHRV_median','rrHRV_iqr','rrHRV_shift_x','rrHRV_shift_y','meanrr','hr','sdnn','rmssd','pnn50','tri','tinn','apen','sd1','sd2','sd1sd2ratio','lf','hf','lfhfratio'},...
                     'VariableNames',{'Global',matlab.lang.makeValidName(['Local_' get(F.htextLocal_range,'String')]),matlab.lang.makeValidName(['Footprint_' get(F.htextFootprint_range,'String')])});
                     if ~showFootprint
                         Results(:,3) = [];
                     end 
                 else
                     Results = table(HRVglobal',HRVlocal',...
-                    'RowNames',{'rrHRV_median','rrHRV_iqr','rrHRV_shift_x','rrHRV_shift_y','meanrr','hr','sdnn','rmssd','pnn50','tri','tinn','sd1','sd2','sd1sd2ratio','lf','hf','lfhfratio'},...
+                    'RowNames',{'rrHRV_median','rrHRV_iqr','rrHRV_shift_x','rrHRV_shift_y','meanrr','hr','sdnn','rmssd','pnn50','tri','tinn','apen','sd1','sd2','sd1sd2ratio','lf','hf','lfhfratio'},...
                     'VariableNames',{'Global',matlab.lang.makeValidName(['Local_' get(F.htextLocal_range,'String')])});
                 end
                                
@@ -1994,10 +2191,10 @@ end
 
 function buttonCopy_Callback(hObject, eventdata, handles) 
     unit_val = [1 1 1 1 1000 60 1000 1000 100 1 1000 1000 1000 1 1 1 1];
-    HRVglobal	 = [HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr 1/HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio].*unit_val;
-    HRVlocal     = [HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr 1/HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio].*unit_val;
+    HRVglobal	 = [HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr 1/HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_apen HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio].*unit_val;
+    HRVlocal     = [HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr 1/HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_apen HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio].*unit_val;
     if ~isempty(HRV_footprint_rrHRV_median)
-        HRVfootprint = [HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr 1/HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio].*unit_val;
+        HRVfootprint = [HRV_footprint_rrHRV_median HRV_footprint_rrHRV_iqr HRV_footprint_rrHRV_shift HRV_footprint_meanrr 1/HRV_footprint_meanrr HRV_footprint_sdnn HRV_footprint_rmssd HRV_footprint_pnn50 HRV_footprint_tri HRV_footprint_tinn HRV_footprint_apen HRV_footprint_sd1 HRV_footprint_sd2 HRV_footprint_sd1sd2ratio HRV_footprint_lf HRV_footprint_hf HRV_footprint_lfhfratio].*unit_val;
         Results = [HRVglobal' HRVlocal' HRVfootprint'];
         if ~showFootprint
             Results(:,3) = [];
@@ -2007,6 +2204,12 @@ function buttonCopy_Callback(hObject, eventdata, handles)
     end
 
     clipboard('copy', mat2str(Results,5))
+end
+
+%% Footline buttons
+function buttonFullscreen_Callback(hObject, eventdata, handles) 
+    set(F.fh, 'WindowState', 'maximized')
+    my_resizereq
 end
 
 %% Help menu buttons
@@ -2106,9 +2309,9 @@ function set_colors
     set(F.hpFootline ,     'BackgroundColor',clr.bgcolor_panels1,'FontSize',font_size,'BorderType','none');
 
   % set text and background colors
-    elements1 = {'htextHeadline','htextGlobal','htextLocal','htextFootprint','htextLocal_range','htextLocal_label','htextFootprint_range','htextFootprint_label','htextLabel_meanrr','htextLabel_sdnn','htextLabel_rmssd','htextLabel_pnn50','htextLabel_tri','htextLabel_tinn','htextLabel_sd1sd2','htextLabel_sd1sd2ratio','htextLabel_lfhf','htextLabel_lfhfratio'};
-    elements2 = {'htextGlobal_meanrr','htextGlobal_sdnn','htextGlobal_rmssd','htextGlobal_pnn50','htextGlobal_tri','htextGlobal_tinn','htextGlobal_sd1sd2ratio','htextGlobal_lfhfratio','htextLocal_meanrr','htextLocal_sdnn','htextLocal_rmssd','htextLocal_pnn50','htextLocal_tri','htextLocal_tinn','htextLocal_sd1sd2ratio','htextLocal_lfhfratio'};
-    elements3 = {'htextFootprint_meanrr','htextFootprint_sdnn','htextFootprint_rmssd','htextFootprint_pnn50','htextFootprint_tri','htextFootprint_tinn','htextFootprint_sd1sd2ratio','htextFootprint_lfhfratio'};
+    elements1 = {'htextHeadline','htextGlobal','htextLocal','htextFootprint','htextLocal_range','htextLocal_label','htextFootprint_range','htextFootprint_label','htextLabel_meanrr','htextLabel_sdnn','htextLabel_rmssd','htextLabel_pnn50','htextLabel_tri','htextLabel_tinn','htextLabel_apen','htextLabel_sd1sd2','htextLabel_sd1sd2ratio','htextLabel_lfhf','htextLabel_lfhfratio'};
+    elements2 = {'htextGlobal_meanrr','htextGlobal_sdnn','htextGlobal_rmssd','htextGlobal_pnn50','htextGlobal_tri','htextGlobal_tinn','htextGlobal_apen','htextGlobal_sd1sd2ratio','htextGlobal_lfhfratio','htextLocal_meanrr','htextLocal_sdnn','htextLocal_rmssd','htextLocal_pnn50','htextLocal_tri','htextLocal_tinn','htextLocal_apen','htextLocal_sd1sd2ratio','htextLocal_lfhfratio'};
+    elements3 = {'htextFootprint_meanrr','htextFootprint_sdnn','htextFootprint_rmssd','htextFootprint_pnn50','htextFootprint_tri','htextFootprint_tinn','htextFootprint_apen','htextFootprint_sd1sd2ratio','htextFootprint_lfhfratio'};
     elements = [elements1, elements2, elements3];
     for i=1:length(elements)
         set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','center','BackgroundColor',clr.bgcolor_results);
@@ -2135,7 +2338,7 @@ function set_colors
         set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','right','BackgroundColor',clr.bgcolor_highlight);
     end
     
-    elements = {'htextLabel_meanrr','htextLabel_sdnn','htextLabel_rmssd','htextLabel_pnn50','htextLabel_tri','htextLabel_tinn','htextLabel_sd1sd2','htextLabel_sd1sd2ratio','htextLabel_lfhf','htextLabel_lfhfratio' };
+    elements = {'htextLabel_meanrr','htextLabel_sdnn','htextLabel_rmssd','htextLabel_pnn50','htextLabel_tri','htextLabel_tinn','htextLabel_apen','htextLabel_sd1sd2','htextLabel_sd1sd2ratio','htextLabel_lfhf','htextLabel_lfhfratio' };
     for i=1:length(elements)
         set(F.(elements{i}),'FontSize',.85*font_size,'HorizontalAlignment','right','BackgroundColor',clr.bgcolor_results);
     end
@@ -2178,7 +2381,8 @@ function set_colors
     set(F.hbuttonMarkerDecrease, 'CData',icons.minus_circled);
     set(F.hbuttonLineType, 'CData',icons.android_more);
     set(F.hbuttonDetail, 'CData',icons.arrow_resize);
-    set(F.hbuttonPickerSection, 'CData',icons.pin);  
+    set(F.hbuttonPickerSection, 'CData',icons.pin);
+    set(F.hbuttonFullScreen, 'CData',icons.arrow_expand);
     
     set(findall(F.htoolbar,'tag','Standard.FileOpen'), 'CData',icons.android_folder);
     set(findall(F.htoolbar,'tag','Standard.SaveFigure'), 'CData',icons.archive);
@@ -2473,18 +2677,7 @@ function qrs_detection
     selection = questdlg('Do you want to save the annotation file?','Save annotation file','Yes','No','Yes');    
     switch selection 
         case 'Yes'
-            [filename, pathname] = uiputfile({'*.mat';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
-            if pathname~=0
-                calc_on
-                [~,~,ext] = fileparts(filename);
-                switch ext
-                    case '.mat'
-                        save([pathname filename],'Ann')
-                    otherwise
-                        csvwrite([pathname filename], Ann)
-                end
-                calc_off
-            end
+            buttonSaveAnnotations_Callback
         case 'No'
         otherwise
     end
@@ -2493,8 +2686,9 @@ end
 
 %% Annotation file
 function load_annotation
-    [AnnFileName,AnnPathName] = uigetfile({'*.ann';'*.atr';'*.csv';'*.mat';'*.txt'},'Select the annotation file',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
+    [AnnFileName,AnnPathName] = uigetfile({'*.ann';'*.atr';'*.csv';'*.edf';'*.mat';'*.txt'},'Select the annotation file',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
     if length(AnnPathName)>1
+      % Import from folder
         AnnType = AnnFileName(max(strfind(AnnFileName,'.'))+1:end);
         switch AnnType
             case 'ann'
@@ -2537,6 +2731,23 @@ function load_annotation
                     warndlg('Cannot find ''rdann''. Please install and set the path to the WFDB Toolbox from PhysioNet.org.')
                 end
                 
+            case 'edf'
+                [record, signals] = read_edf([AnnPathName AnnFileName], 1);
+                if isstruct(record)
+                    if length(fieldnames(record))>1 
+                        if isfield(record,'R_peaks')
+                            Ann = record.R_peaks;
+                        else                        
+                            [i,v] = listdlg('PromptString','Select a signal:', 'SelectionMode','single', 'ListString',signals.name);
+                            if v==1
+                                Ann = record.(matlab.lang.makeValidName(signals.name{i}));
+                            end
+                        end
+                    else
+                        Ann = record.(matlab.lang.makeValidName(signals.name{1}));
+                    end
+                end
+                
             case 'mat'
                 AnnmatObj = matfile([AnnPathName AnnFileName]);
                 Annfn = fieldnames(AnnmatObj);
@@ -2559,47 +2770,108 @@ function load_annotation
                         end
                 end                                        
                 Ann = AnnmatObj.(Anndata_name);
-                
+                Ann = Ann(:);
             otherwise
                 fileID = fopen([AnnPathName AnnFileName],'r');
                 dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
                 fclose(fileID);
                 Ann = dataArray{:,1}; clearvars dataArray;
-        end    
+        end
+        
+    else
+      % Import data from workspace
+        baseVarInfo = evalin('base', 'whos'); 
+        [i,v] = listdlg('PromptString','Import workspace variable:', 'SelectionMode','single', 'ListString',{baseVarInfo.name});
+        if v
+            AnnmatObj = evalin('base',baseVarInfo(i).name);
+            if isstruct(AnnmatObj)                
+                Annfn = fieldnames(AnnmatObj);
+                % filter fieldnames with numeric type
+                for i=1:size(Annfn,1)
+                    fn_num(i) = isnumeric(AnnmatObj.(Annfn{i}));
+                end
+                switch sum(fn_num)
+                    case 0
+                        warndlg('There is no numeric data inside your workspace variable.')
+                    case 1
+                        Anndata_name = Annfn{fn_num};
+                    otherwise
+                        str = Annfn(fn_num);
+                        [s,v] = listdlg('PromptString','Select a field:',...
+                            'SelectionMode','single','ListString',str);
+                        if v>0
+                            Anndata_name = str{s};
+                        end
+                end                                        
+                Ann = AnnmatObj.(Anndata_name);
+                Ann = Ann(:);
+            elseif isnumeric(AnnmatObj)
+                if min(size(AnnmatObj))==1
+                    Ann = AnnmatObj(:);
+                else
+                    warndlg('Dimension mismatch. Please provide the annotations as a one-dimensional vector.')
+                end
+            else
+                warndlg('Please provide the annotations as a one-dimensional vector or a vector stored as a field in a structure.')
+            end           
+
+        end  
     end
 end
 
 function buttonSaveAnnotations_Callback(hObject, eventdata, handles) 
-    [filename, pathname] = uiputfile({'*.mat';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
+    [filename, pathname] = uiputfile({'*.mat';'*.edf';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
     if pathname~=0
         calc_on
         [~,~,ext] = fileparts(filename);
         switch ext
             case '.mat'
                 save([pathname filename],'Ann')
+            case '.edf'
+              % Save record information as structure to pass the
+              % information to write_edf
+                header = struct();
+                header.fs = Fs;
+                header.name = name_org;
+                header.start_date = StartDate;
+                header.signalnames = 'R_peaks';
+
+                write_edf([pathname filename], Ann(:)', header)
             otherwise
                 csvwrite([pathname filename], Ann)
         end
         calc_off
-        
-        selection = questdlg('Do you want to export an additional file for ignored beats?','Save ignored beats','Yes','No','Yes');    
-        switch selection 
-            case 'Yes'
-                [filename, pathname] = uiputfile({'*.mat';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ignore.mat']);
-                if pathname~=0
-                    calc_on
-                    Ann_Ignore = Ann(my_artifacts+1);
-                    [~,~,ext] = fileparts(filename);
-                    switch ext
-                        case '.mat'
-                            save([pathname filename],'Ann_Ignore')
-                        otherwise
-                            csvwrite([pathname filename], Ann_Ignore)
+
+        if ~isempty(my_artifacts)
+            selection = questdlg('Do you want to export an additional file for ignored beats?','Save ignored beats','Yes','No','Yes'); 
+            switch selection 
+                case 'Yes'
+                    [filename, pathname] = uiputfile({'*.mat';'*.edf';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ignore.mat']);
+                    if pathname~=0
+                        calc_on
+                        Ann_Ignore = Ann(my_artifacts+1);
+                        [~,~,ext] = fileparts(filename);
+                        switch ext
+                            case '.mat'
+                                save([pathname filename],'Ann_Ignore')
+                            case '.edf'
+                              % Save record information as structure to pass the
+                              % information to write_edf
+                                header = struct();
+                                header.fs = Fs;
+                                header.name = name_org;
+                                header.start_date = StartDate;
+                                header.signalnames = 'Ignore_peaks';
+                                
+                                write_edf([pathname filename], Ann_Ignore, header)
+                            otherwise
+                                csvwrite([pathname filename], Ann_Ignore)
+                        end
+                        calc_off
                     end
-                    calc_off
-                end
-            case 'No'
-            otherwise
+                case 'No'
+                otherwise
+            end
         end
 
     end
@@ -2914,6 +3186,11 @@ function spectrum_tachogram
             text(.275,.5*yl(2),{'HFnu' [num2str(pHF,'%.2f') '%']},...
                 'Color',clr.plot_text,'HorizontalAlignment','center','parent',F.ha4)
         
+          % Warning if ignored and filtered beats are found
+            if sum(isnan(RR))>0
+            text(0.25,.9*yl(2),'\bfComputed from unfiltered data',...
+                'Color','red','HorizontalAlignment','center','parent',F.ha4)
+            end
             Spectrumstyle
         else
             delete(get(F.ha4,'Children'));
@@ -3040,7 +3317,7 @@ end
 function continuousHRV_show
     clear F.ha5
     x = Ann(2:end)/(Fs*24*60*60);
-    
+
     if showTINN && showLFHF
         [hAx,hLine1,hLine2] = plotyy(x,HRV_hf,...
         [x,x,x,x,x,x],...
@@ -3191,6 +3468,7 @@ function update_table_global
     HRV_global_rmssd = HRV.RMSSD(RR,0);
     HRV_global_pnn50 = HRV.pNN50(RR,0);        
     [HRV_global_tri,HRV_global_tinn] = HRV.triangular_val(RR,0);
+    HRV_global_apen = HRV.ApEn(RR,0);
     [HRV_global_sd1,HRV_global_sd2,HRV_global_sd1sd2ratio] = HRV.returnmap_val(RR,0);
     [HRV_global_lf,HRV_global_hf,HRV_global_lfhfratio] = HRV.fft_val(RR,0,Fs);
 
@@ -3203,6 +3481,7 @@ function update_table_global
     set(F.htextGlobal_pnn50,'String',num2str(100*HRV_global_pnn50,'%2.1f'))
     set(F.htextGlobal_tri,'String',num2str(HRV_global_tri,'%1.1f'))
     set(F.htextGlobal_tinn,'String',num2str(1000*HRV_global_tinn,'%1.0f'))
+    set(F.htextGlobal_apen,'String',num2str(HRV_global_apen,'%1.2f'))
     set(F.htextGlobal_sd1sd2,'String',[num2str(1000*HRV_global_sd1,'%1.1f') ' | ' num2str(1000*HRV_global_sd2,'%1.1f')])
     set(F.htextGlobal_sd1sd2ratio,'String',num2str(HRV_global_sd1sd2ratio,'%1.2f'))
     set(F.htextGlobal_lfhf,'String',[num2str(HRV_global_lf,'%2.1f') ' | ' num2str(HRV_global_hf,'%2.1f')])
@@ -3216,6 +3495,7 @@ function update_table_local
     HRV_local_rmssd = HRV.RMSSD(RR_loc,0);
     HRV_local_pnn50 = HRV.pNN50(RR_loc,0);        
     [HRV_local_tri,HRV_local_tinn] = HRV.triangular_val(RR_loc,0);
+    HRV_local_apen = HRV.ApEn(RR_loc,0);
     [HRV_local_sd1,HRV_local_sd2,HRV_local_sd1sd2ratio] = HRV.returnmap_val(RR_loc,0);
     [HRV_local_lf,HRV_local_hf,HRV_local_lfhfratio] = HRV.fft_val(RR_loc,0,Fs);
 
@@ -3228,6 +3508,7 @@ function update_table_local
     set(F.htextLocal_pnn50,'String',num2str(100*HRV_local_pnn50,'%2.1f'))
     set(F.htextLocal_tri,'String',num2str(HRV_local_tri,'%1.1f'))
     set(F.htextLocal_tinn,'String',num2str(1000*HRV_local_tinn,'%1.0f'))
+    set(F.htextLocal_apen,'String',num2str(HRV_local_apen,'%1.2f'))
     set(F.htextLocal_sd1sd2,'String',[num2str(1000*HRV_local_sd1,'%1.1f') ' | ' num2str(1000*HRV_local_sd2,'%1.1f')])
     set(F.htextLocal_sd1sd2ratio,'String',num2str(HRV_local_sd1sd2ratio,'%1.2f'))
     set(F.htextLocal_lfhf,'String',[num2str(HRV_local_lf,'%2.1f') ' | ' num2str(HRV_local_hf,'%2.1f')])
@@ -3245,6 +3526,7 @@ function update_table_footprint
         HRV_footprint_rmssd = HRV.RMSSD(fp_RR,0);
         HRV_footprint_pnn50 = HRV.pNN50(fp_RR,0);        
         [HRV_footprint_tri,HRV_footprint_tinn] = HRV.triangular_val(fp_RR,0);
+        HRV_footprint_apen = HRV.ApEn(fp_RR,0);
         [HRV_footprint_sd1,HRV_footprint_sd2,HRV_footprint_sd1sd2ratio] = HRV.returnmap_val(fp_RR,0);
         [HRV_footprint_lf,HRV_footprint_hf,HRV_footprint_lfhfratio] = HRV.fft_val(fp_RR,0,Fs);
 
@@ -3257,6 +3539,7 @@ function update_table_footprint
         set(F.htextFootprint_pnn50,'String',num2str(100*HRV_footprint_pnn50,'%1.1f'))
         set(F.htextFootprint_tri,'String',num2str(HRV_footprint_tri,'%1.1f'))
         set(F.htextFootprint_tinn,'String',num2str(1000*HRV_footprint_tinn,'%1.0f'))
+        set(F.htextFootprint_apen,'String',num2str(HRV_footprint_apen,'%1.2f'))
         set(F.htextFootprint_sd1sd2,'String',[num2str(1000*HRV_footprint_sd1,'%1.1f') ' | ' num2str(1000*HRV_footprint_sd2,'%1.1f')])
         set(F.htextFootprint_sd1sd2ratio,'String',num2str(HRV_footprint_sd1sd2ratio,'%1.2f'))
         set(F.htextFootprint_lfhf,'String',[num2str(HRV_footprint_lf,'%2.1f') ' |' num2str(HRV_footprint_hf,'%2.1f')])
@@ -3271,6 +3554,7 @@ function update_table_footprint
         set(F.htextFootprint_pnn50,'String','')
         set(F.htextFootprint_tri,'String','')
         set(F.htextFootprint_tinn,'String','')
+        set(F.htextFootprint_apen,'String','')
         set(F.htextFootprint_sd1sd2,'String','')
         set(F.htextFootprint_sd1sd2ratio,'String','')
         set(F.htextFootprint_lfhf,'String','')
@@ -3447,7 +3731,6 @@ function my_resizereq(hObject, eventdata, handles)
     font_size = font_size*screenposition_new(3)/screenposition(3);
     screenposition = screenposition_new;
     set_colors
-
 end
 
 

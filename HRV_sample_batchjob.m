@@ -55,7 +55,8 @@ for id = 1:n
   % RR intervals and filtering of artifacts
     RR = diff(Ann);
     RR_filt = HRV.RRfilter(RR,20);
-
+    time = cumsum(RR)
+    
   % Computation of local HRV measures
 	RR_loc = RR_filt;
 

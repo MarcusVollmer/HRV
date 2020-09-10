@@ -40,18 +40,18 @@ function [record, signals, start_date, header, header2] = read_edf(fname, qdl, m
 %      http://www.edfplus.info/specs/edf.html
 %
 %
-%   MIT License (MIT) Copyright (c) 2017-2019 Marcus Vollmer,
+%   MIT License (MIT) Copyright (c) 2017-2020 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 03 July 2019
-%   version: 0.04
+%   last modified: 11 August 2020
+%   version: 0.05
 
 if nargin<2 || isempty(qdl)
     qdl=0;
 end
 
 if nargin<3 || isempty(memory)
-    memory=0;
+    memory=1;
 end
 
 fid = fopen(fname,'r');
@@ -82,17 +82,37 @@ signals = table();
     signals.physical_dimension = cellstr(fread(fid, [8 n_signals], '*char')');
 
 % ns * 8 ascii : ns * physical minimum (e.g. -500 or 34)
-    signals.physical_minimum = str2num(fread(fid, [8 n_signals], '*char')');
+    phy_min = str2num(fread(fid, [8 n_signals], '*char')');
+    if ~isempty(phy_min)
+        signals.physical_minimum = phy_min;
+    else
+        signals.physical_minimum = NaN;
+    end
 
 % ns * 8 ascii : ns * physical maximum (e.g. 500 or 40)
-    signals.physical_maximum = str2num(fread(fid, [8 n_signals], '*char')');
-
+    phy_max = str2num(fread(fid, [8 n_signals], '*char')');
+    if ~isempty(phy_max)
+        signals.physical_maximum = phy_max;
+    else
+        signals.physical_maximum = NaN;
+    end
+    
 % ns * 8 ascii : ns * digital minimum (e.g. -2048)
-    signals.digital_minimum = str2num(fread(fid, [8 n_signals], '*char')');
+    dig_min = str2num(fread(fid, [8 n_signals], '*char')');
+    if ~isempty(dig_min)
+        signals.digital_minimum = dig_min;
+    else
+        signals.digital_minimum = NaN;
+    end
 
 % ns * 8 ascii : ns * digital maximum (e.g. 2047)
-    signals.digital_maximum = str2num(fread(fid, [8 n_signals], '*char')');
-
+    dig_max = str2num(fread(fid, [8 n_signals], '*char')');
+    if ~isempty(dig_max)
+        signals.digital_maximum = dig_max;
+    else
+        signals.digital_maximum = NaN;
+    end
+    
 % ns * 80 ascii : ns * prefiltering (e.g. HP:0.1Hz LP:75Hz)
     signals.prefiltering = cellstr(fread(fid, [80 n_signals], '*char')');
 
@@ -108,6 +128,12 @@ signals = table();
     signals.translation = signals.physical_maximum - signals.scale.*signals.digital_maximum;
     signals.Fs = signals.n/n_duration;
 
+    if isnan(signals.scale)
+        signals.scale = 1;
+    end
+    if isnan(signals.translation)
+        signals.translation = 0;
+    end
     
 if memory==1
     %Memory saving mode
@@ -128,7 +154,7 @@ if memory==1
     
 else
     % Read Signals
-    data = fread(fid,'int16=>int16');
+    data = fread(fid,'int16');
     if qdl==0
         record = struct;
         % nr of samples[i] * integer : i-th signal
