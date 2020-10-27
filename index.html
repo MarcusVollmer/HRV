@@ -20,7 +20,7 @@
     <header>
     <div class="myinner">
       <div class="inner">
-        <h1 class="rrfp">HRVTool<font size="+3"><sub> 1.05</sub></font></h1>
+        <h1 class="rrfp">HRVTool<font size="+3"><sub> 1.06</sub></font></h1>
         <h2>Analyzing Heart Rate Variability</h2>
         <a href="https://github.com/MarcusVollmer/HRV" class="button"><small>View project on</small> GitHub</a>
       </div>
@@ -34,8 +34,13 @@
 <a id="whats-new" class="anchor" href="#whats-new" aria-hidden="true"><span class="octicon octicon-link"></span></a>What's new?</h3>
 
 <p>
+<font size="-2">27 October 2020</font><br>
+The new Version 1.06 is online. The <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">Matlab App</a> is ready for installation.
+What's new: Minor changes in reading and writing edf-files and in the import of ECG-pdfs. Bug fixes in loading mat-files.
+</p>
+<p>
 <font size="-2">10 September 2020</font><br>
-The new Version 1.05 is online. The <a href="https://github.com/MarcusVollmer/HRV/files/HRVTool.mlappinstall" alt="Download Matlab App">Matlab App</a> is ready for installation.
+The new Version 1.05 is online.
 What's new: The toolbox is ready to <b>import ECG-PDFs (*.pdf) from Apple Watch and AliveCor Kardia</b> that works on all main OS (MacOS, Windows, Linux/UNIX). It also imports the beat ticks (annotations) that comes with the PDF. All you need is a free installation of <a href="https://inkscape.org/" alt="Download Inkscape">Inkscape</a> and you need to start Matlab with administrator rights. For Linux systems a faster solution exist when having the packages <a href="https://cityinthesky.co.uk/opensource/pdf2svg/" alt="Download pdf2svg">pdf2svg</a> and <a href="https://pypi.org/project/pdfminer/" alt="Download pdfminer">pdfminer</a> installed. For the import of PDFs in batch mode you can use the function <a href="https://github.com/MarcusVollmer/HRV/blob/master/read_pdf.m" alt="Link to the function read_pdf">read_pdf</a> that converts the pdf to Matlab structure. It's now possible to <b>save the annotations as EDF files</b> and to <b>import signals and annotations from workspace variables</b>. Therefore you need to cancel the import of a file, that automatically directs you to a selection dialog of workspace variables. This is also working when loading annotations. Moreover, the power spectrum was not squared, which is now corrected. The table of HRV parameters contains no Approximate Entropy ApEn.
 </p>
 <p>
