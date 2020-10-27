@@ -1,4 +1,4 @@
-# HRVTool v1.06
+# HRVTool v1.07
 ## Methods for analyzing Heart Rate Variability
 
 The present functions are originally made for Matlab R2016b. Errors may occur using older releases (at least R2014b required). Additional toolboxes are not required to run the basic analysis. 
@@ -31,4 +31,4 @@ Copyright (c) 2009, Jimmy Shen
 All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS
 Copyright (c) 2015-2020 Marcus Vollmer
 
-20 October 2020
+27 October 2020

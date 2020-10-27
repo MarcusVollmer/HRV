@@ -11,16 +11,16 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.06
+% Version: 1.07
 % Author: Marcus Vollmer
-% Date: 20 October 2020
+% Date: 27 October 2020
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq, 'ResizeFcn', @my_resizereq);
 set(gcf,'Units','inches');
 
 global icons qrs_settings AppPath HRVTool_version HRVTool_version_date font_size font_size_factor colormode clr screenposition
-HRVTool_version = 1.06;
-HRVTool_version_date = '20 October 2020';
+HRVTool_version = 1.07;
+HRVTool_version_date = '27 October 2020';
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4));
 
@@ -612,8 +612,15 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 matObj = matfile([get(F.heditFolder,'String') FileName(1:end-4) '.mat']);
             end
             
+            if strcmp(class(matObj),'matlab.io.MatFile')
+                fn = setdiff(fieldnames(matObj),'Properties');
+                if length(fn)==1
+                    matObj = matObj.(fn{1});
+                end               
+            end
+            
           % Structured array or vector
-            if isstruct(matObj) || strcmp(class(matObj),'matlab.io.MatFile')
+            if isstruct(matObj) || strcmp(class(matObj),'matlab.io.MatFile')   
                 fn = fieldnames(matObj);
                 data_name = [];
 
@@ -1079,7 +1086,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
             RRfilt = HRV.RRfilter(RRorg,filter_limit); 
         end
         RR = RRfilt;
-        RR(my_artifacts) = NaN; 
+        RR(max(my_artifacts,1)) = NaN;
         RR(min(my_artifacts+1,size(RR,1))) = NaN;
         relRR = HRV.rrx(RR);
         relRR_pct = round(relRR*1000)/10;
@@ -1232,7 +1239,8 @@ function editFilter_Callback(hObject, eventdata, handles)
         RRfilt = HRV.RRfilter(RRorg,filter_limit);
     end
     RR = RRfilt;   
-    RR(my_artifacts) = NaN; RR(min(my_artifacts+1,size(RR,1))) = NaN;
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
     relRR = HRV.rrx(RR);
     relRR_pct = round(relRR*1000)/10;
     
@@ -1497,7 +1505,8 @@ function buttonFilterDecrease_Callback(hObject, eventdata, handles)
         RRfilt = HRV.RRfilter(RRorg,filter_limit);
     end
     RR = RRfilt;   
-    RR(my_artifacts) = NaN; RR(min(my_artifacts+1,size(RR,1))) = NaN;
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
     relRR = HRV.rrx(RR);
     relRR_pct = round(relRR*1000)/10;
 
@@ -1524,7 +1533,8 @@ function buttonFilterIncrease_Callback(hObject, eventdata, handles)
         RRfilt = HRV.RRfilter(RRorg,filter_limit);
     end
     RR = RRfilt;   
-    RR(my_artifacts) = NaN; RR(min(my_artifacts+1,size(RR,1))) = NaN;
+    RR(max(my_artifacts,1)) = NaN;
+    RR(min(my_artifacts+1,size(RR,1))) = NaN;
     relRR = HRV.rrx(RR);
     relRR_pct = round(relRR*1000)/10;
     
@@ -2148,12 +2158,13 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
                             res = [1280 900];
                         case '1600x900'
                             res = [1600 900];
-                        case '1680x1050'
+                        case '1680x1020'
                             res = [1680 1020];
                         case '1920x1080'
-                            res = [1920 1080];                            
-                    end
-                    res = [1680 1020];
+                            res = [1920 1080];  
+                        otherwise
+                            res = [1680 1020];
+                    end                    
                     set(F.fh,'PaperSize',res/100);%'outerposition',[0 0 1 1]'Position',[0,0,res(1),res(2)],'outerposition',);
                     %get(F.fh,'Position')
                     print('-painters','-fillpage','-dpdf', [path file])
@@ -2165,7 +2176,7 @@ function buttonSaveAs_Callback(hObject, eventdata, handles)
             case 'fig'
                 savefig(F.fh,[path file],'compact')
             case {'csv','mat'}
-                unit_val = [1 1 1 1 1000 60 1000 1000 100 1 1000 1000 1000 1 1 1 1];
+                unit_val = [1 1 1 1 1000 60 1000 1000 100 1 1000 1 1000 1000 1 1 1 1];
                 HRVglobal	 = [HRV_global_rrHRV_median HRV_global_rrHRV_iqr HRV_global_rrHRV_shift HRV_global_meanrr 1/HRV_global_meanrr HRV_global_sdnn HRV_global_rmssd HRV_global_pnn50 HRV_global_tri HRV_global_tinn HRV_global_apen HRV_global_sd1 HRV_global_sd2 HRV_global_sd1sd2ratio HRV_global_lf HRV_global_hf HRV_global_lfhfratio].*unit_val;
                 HRVlocal     = [HRV_local_rrHRV_median HRV_local_rrHRV_iqr HRV_local_rrHRV_shift HRV_local_meanrr 1/HRV_local_meanrr HRV_local_sdnn HRV_local_rmssd HRV_local_pnn50 HRV_local_tri HRV_local_tinn HRV_local_apen HRV_local_sd1 HRV_local_sd2 HRV_local_sd1sd2ratio HRV_local_lf HRV_local_hf HRV_local_lfhfratio].*unit_val;
                 if ~isempty(HRV_footprint_rrHRV_median)
@@ -2452,14 +2463,20 @@ end
 
 %% Dialog boxes
 function dialog_annotationfile
-    button = questdlg('Do you want to load an annotation file?','Annotation file','Yes','No - Start heart beat detection','No - Start heart beat detection');
+    button = questdlg('Do you want to load an annotation file?','Annotation file','Yes from file','Yes from workspace','No - Start heart beat detection','No - Start heart beat detection');
     unit = {'Waveform'};
     set(F.hbuttonShowWaveform, 'String', 'Waveform')
     
-    if strcmp(button,'Yes')                            
-        load_annotation       
+    if strcmp(button,'Yes from file')
+        load_annotation
+        dialog_ignorefile
         set(F.htextBusy,'String','Busy - Loading annotation file.');
         drawnow
+    elseif strcmp(button,'Yes from workspace')        
+        load_annotation_workspace
+        dialog_ignorefile
+        set(F.htextBusy,'String','Busy - Loading annotation file.');
+        drawnow        
     else
         s = listdlg('PromptString','Select the waveform type:','SelectionMode','single','ListString',qrs_settings.Name);
         if isempty(s)
@@ -2517,6 +2534,17 @@ function dialog_annotationfile
     imported = 1;
         
 end
+
+function dialog_ignorefile
+  % Import ignored beats
+    button = questdlg('Do you want to load ignored beats?','Ignored beats file','Yes from file','Yes from workspace','No','No');
+    if strcmp(button,'Yes from file')
+        load_ignore
+    elseif strcmp(button,'Yes from workspace')
+        load_ignore_workspace
+    end
+end
+
 
 
 %% Main function
@@ -2611,7 +2639,8 @@ function refresh_waveform
     ch = get(F.ha1,'Children');
     delete(ch(1:end-1));
 
-    plot(F.ha1,Ann(my_artifacts+1)/Fs,repmat(.6,length(my_artifacts),1),'xk');
+    plot(F.ha1,Ann(my_artifacts+1)/Fs,repmat(.6,length(my_artifacts),1),'x','Color',clr.plot_marker);
+
     
     tmp = find(Ann/Fs<xl(2) & Ann/Fs>xl(1));
     if size(tmp,1)>30
@@ -2698,7 +2727,7 @@ function load_annotation
         AnnType = AnnFileName(max(strfind(AnnFileName,'.'))+1:end);
         switch AnnType
             case 'ann'
-                
+
             case 'atr' % Load PhysioNet annotation files
                 if ~isempty(which('rdann'))
                     old_path = cd;
@@ -2736,7 +2765,7 @@ function load_annotation
                 else
                     warndlg('Cannot find ''rdann''. Please install and set the path to the WFDB Toolbox from PhysioNet.org.')
                 end
-                
+
             case 'edf'
                 [record, signals] = read_edf([AnnPathName AnnFileName], 1);
                 if isstruct(record)
@@ -2753,7 +2782,7 @@ function load_annotation
                         Ann = record.(matlab.lang.makeValidName(signals.name{1}));
                     end
                 end
-                
+
             case 'mat'
                 AnnmatObj = matfile([AnnPathName AnnFileName]);
                 Annfn = fieldnames(AnnmatObj);
@@ -2783,47 +2812,202 @@ function load_annotation
                 fclose(fileID);
                 Ann = dataArray{:,1}; clearvars dataArray;
         end
-        
-    else
-      % Import data from workspace
-        baseVarInfo = evalin('base', 'whos'); 
-        [i,v] = listdlg('PromptString','Import workspace variable:', 'SelectionMode','single', 'ListString',{baseVarInfo.name});
-        if v
-            AnnmatObj = evalin('base',baseVarInfo(i).name);
-            if isstruct(AnnmatObj)                
-                Annfn = fieldnames(AnnmatObj);
+    end         
+end
+
+function load_annotation_workspace
+  % Import data from workspace
+    baseVarInfo = evalin('base', 'whos'); 
+    [i,v] = listdlg('PromptString','Import workspace variable:', 'SelectionMode','single', 'ListString',{baseVarInfo.name});
+    if v
+        AnnmatObj = evalin('base',baseVarInfo(i).name);
+        if isstruct(AnnmatObj)                
+            Annfn = fieldnames(AnnmatObj);
+            % filter fieldnames with numeric type
+            for i=1:size(Annfn,1)
+                fn_num(i) = isnumeric(AnnmatObj.(Annfn{i}));
+            end
+            switch sum(fn_num)
+                case 0
+                    warndlg('There is no numeric data inside your workspace variable.')
+                case 1
+                    Anndata_name = Annfn{fn_num};
+                otherwise
+                    str = Annfn(fn_num);
+                    [s,v] = listdlg('PromptString','Select a field:',...
+                        'SelectionMode','single','ListString',str);
+                    if v>0
+                        Anndata_name = str{s};
+                    end
+            end                                        
+            Ann = AnnmatObj.(Anndata_name);
+            Ann = Ann(:);
+        elseif isnumeric(AnnmatObj)
+            if min(size(AnnmatObj))==1
+                Ann = AnnmatObj(:);
+            else
+                warndlg('Dimension mismatch. Please provide the annotations as a one-dimensional vector.')
+            end
+        else
+            warndlg('Please provide the annotations as a one-dimensional vector or a vector stored as a field in a structure.')
+        end           
+
+    end  
+end
+
+function load_ignore
+    [IgnoreFileName,IgnorePathName] = uigetfile({'*.ann';'*.atr';'*.csv';'*.edf';'*.mat';'*.txt'},'Select the ignore file',[get(F.heditFolder,'String') FileName(1:end-4) '_ignore.mat']);
+    if length(IgnorePathName)>1
+        Ann_Ignore = [];
+      % Import from folder
+        IgnoreType = IgnoreFileName(max(strfind(IgnoreFileName,'.'))+1:end);
+        switch IgnoreType
+            case 'ann'
+
+            case 'atr' % Load PhysioNet annotation files
+                if ~isempty(which('rdann'))
+                    old_path = cd;
+                    cd(IgnorePathName)
+
+                    wt = waitbar(0,'Loading your data ...');
+                    [ignore_complete, ignore_type] = rdann(IgnoreFileName(1:end-4),IgnoreType);
+                    close(wt)
+
+                    cd(old_path) 
+
+                    % Select annotation codes
+                        % Differentiate beats and other annotations
+                        beat_type = intersect(ignore_type,{'N','L','R','B','A','a','J','S','V','r','F','e','j','n','E','/','f','Q','?'});
+                        other_type = setdiff(ignore_type,beat_type);
+                        current_type = [beat_type;other_type];
+
+                        [indx,tf] = listdlg('PromptString','Select annotation codes to ignore beats:','ListString',current_type,...
+                            'InitialValue',1:size(beat_type,1),'OKString','Import');
+                        if tf==1                        
+                            selected_types = current_type(indx);       
+                            Ann_Ignore = ignore_complete(ismember(ignore_type,selected_types));
+                        end
+                else
+                    warndlg('Cannot find ''rdann''. Please install and set the path to the WFDB Toolbox from PhysioNet.org.')
+                end
+
+            case 'edf'
+                [Ignorerecord, Ignoresignals] = read_edf([IgnorePathName IgnoreFileName], 1);
+                if isstruct(Ignorerecord)
+                    if length(fieldnames(Ignorerecord))>1 
+                        if isfield(Ignorerecord,'Ignore_peaks')
+                            Ann_Ignore = Ignorerecord.Ignore_peaks;
+                        else                        
+                            [i,v] = listdlg('PromptString','Select a signal:', 'SelectionMode','single', 'ListString',Ignoresignals.name);
+                            if v==1
+                                Ann_Ignore = record.(matlab.lang.makeValidName(Ignoresignals.name{i}));
+                            end
+                        end
+                    else
+                        Ann_Ignore = record.(matlab.lang.makeValidName(Ignoresignals.name{1}));
+                    end
+                end
+
+            case 'mat'
+                IgnorematObj = matfile([IgnorePathName IgnoreFileName]);
+                Ignorefn = fieldnames(IgnorematObj);
                 % filter fieldnames with numeric type
-                for i=1:size(Annfn,1)
-                    fn_num(i) = isnumeric(AnnmatObj.(Annfn{i}));
+                for i=1:size(Ignorefn,1)
+                    fn_num(i) = isnumeric(IgnorematObj.(Ignorefn{i}));
                 end
                 switch sum(fn_num)
                     case 0
-                        warndlg('There is no numeric data inside your workspace variable.')
+                        warndlg('There is no numeric data inside the mat-file.')
                     case 1
-                        Anndata_name = Annfn{fn_num};
+                        Ignoredata_name = Ignorefn{fn_num};
+
                     otherwise
-                        str = Annfn(fn_num);
-                        [s,v] = listdlg('PromptString','Select a field:',...
+                        str = Ignorefn(fn_num);
+                        [s,v] = listdlg('PromptString','Select a file:',...
                             'SelectionMode','single','ListString',str);
                         if v>0
-                            Anndata_name = str{s};
+                            Ignoredata_name = str{s};
                         end
                 end                                        
-                Ann = AnnmatObj.(Anndata_name);
-                Ann = Ann(:);
-            elseif isnumeric(AnnmatObj)
-                if min(size(AnnmatObj))==1
-                    Ann = AnnmatObj(:);
-                else
-                    warndlg('Dimension mismatch. Please provide the annotations as a one-dimensional vector.')
-                end
-            else
-                warndlg('Please provide the annotations as a one-dimensional vector or a vector stored as a field in a structure.')
-            end           
+                Ann_Ignore = IgnorematObj.(Ignoredata_name);
+                Ann_Ignore = Ann_Ignore(:);
 
-        end  
+            otherwise
+                fileID = fopen([IgnorePathName IgnoreFileName],'r');
+                dataArray = textscan(fileID,'%f%[^\n\r]','Delimiter','','EmptyValue',NaN,'ReturnOnError',false);
+                fclose(fileID);
+                Ann_Ignore = dataArray{:,1}; clearvars dataArray;
+        end
+
+        % Find annotations to ignore and set 'my_artifacts'
+        [sharedVals,idxsIntoA] = intersect(Ann, Ann_Ignore, 'stable');
+        if length(sharedVals)==length(Ann_Ignore)
+            my_artifacts = idxsIntoA-1;
+            RR(max(my_artifacts,1)) = NaN;
+            RR(min(my_artifacts+1,size(RR,1))) = NaN;
+            relRR = HRV.rrx(RR);
+            relRR_pct = round(relRR*1000)/10;
+        else
+            warndlg('Dimension mismatch. Cannot find all the annotations that should be ignored.')
+        end
     end
+
 end
+
+function load_ignore_workspace
+    baseVarInfo = evalin('base', 'whos'); 
+    [i,v] = listdlg('PromptString','Import ignore variable:', 'SelectionMode','single', 'ListString',{baseVarInfo.name});
+    if v
+        IgnorematObj = evalin('base',baseVarInfo(i).name);
+        if isstruct(IgnorematObj)                
+            Ignorefn = fieldnames(IgnorematObj);
+            % filter fieldnames with numeric type
+            for i=1:size(Annfn,1)
+                fn_num(i) = isnumeric(IgnorematObj.(Ignorefn{i}));
+            end
+            switch sum(fn_num)
+                case 0
+                    warndlg('There is no numeric data inside your workspace variable.')
+                case 1
+                    Ignoredata_name = Ignorefn{fn_num};
+                otherwise
+                    str = Ignorefn(fn_num);
+                    [s,v] = listdlg('PromptString','Select a field:',...
+                        'SelectionMode','single','ListString',str);
+                    if v>0
+                        Ignoredata_name = str{s};
+                    end
+            end                                        
+            Ann_Ignore = IgnorematObj.(Ignoredata_name);
+            Ann_Ignore = Ann_Ignore(:);
+
+        elseif isnumeric(IgnorematObj)
+            if min(size(IgnorematObj))==1
+                Ann_Ignore = IgnorematObj(:);
+            else
+                warndlg('Dimension mismatch. Please provide ignored annotations as a one-dimensional vector.')
+            end
+        else
+            warndlg('Please provide the ignored annotations as a one-dimensional vector or a vector stored as a field in a structure.')
+        end
+
+        % Find annotations to ignore and set 'my_artifacts'
+        [sharedVals,idxsIntoA] = intersect(Ann, Ann_Ignore, 'stable');
+        if length(sharedVals)==length(Ann_Ignore)
+            my_artifacts = idxsIntoA-1;
+            RR(max(my_artifacts,1)) = NaN;
+            RR(min(my_artifacts+1,size(RR,1))) = NaN;
+            relRR = HRV.rrx(RR);
+            relRR_pct = round(relRR*1000)/10;
+        else
+            warndlg('Dimension mismatch. Cannot find all the annotations that should be ignored.')
+        end
+
+    end 
+end
+
+
+
 
 function buttonSaveAnnotations_Callback(hObject, eventdata, handles) 
     [filename, pathname] = uiputfile({'*.mat';'*.edf';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ann.mat']);
@@ -2854,7 +3038,7 @@ function buttonSaveAnnotations_Callback(hObject, eventdata, handles)
                 case 'Yes'
                     [filename, pathname] = uiputfile({'*.mat';'*.edf';'*.txt';'*.csv'},'Save annotation file as',[get(F.heditFolder,'String') FileName(1:end-4) '_ignore.mat']);
                     if pathname~=0
-                        calc_on
+                        calc_on                        
                         Ann_Ignore = Ann(my_artifacts+1);
                         [~,~,ext] = fileparts(filename);
                         switch ext
@@ -3492,7 +3676,7 @@ function update_table_global
     set(F.htextGlobal_sd1sd2ratio,'String',num2str(HRV_global_sd1sd2ratio,'%1.2f'))
     set(F.htextGlobal_lfhf,'String',[num2str(HRV_global_lf,'%2.1f') ' | ' num2str(HRV_global_hf,'%2.1f')])
     set(F.htextGlobal_lfhfratio,'String',num2str(HRV_global_lfhfratio,'%1.2f'))     
-end 
+end
 
 function update_table_local
     [HRV_local_rrHRV_median,HRV_local_rrHRV_iqr,HRV_local_rrHRV_shift] = HRV.rrHRV(RR_loc,0);
