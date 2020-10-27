@@ -46,8 +46,8 @@ function [record] = read_pdf(fname,ink)
 %   MIT License (MIT) Copyright (c) 2020 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 08 September 2020
-%   version: 0.01
+%   last modified: 12 October 2020
+%   version: 0.02
 
 
     if nargin<2 || isempty(ink)
@@ -149,42 +149,69 @@ else
 
         switch appleflag+2*kardia+3*aliveecg
             case 1
-              % Apple Watch / tested with iOS 13.6, watchOS 6.2.8, Watch5,2 
+              % Apple Watch / 
+              % tested with iOS 13.6, watchOS 6.2.8, Watch5,2 
+              % tested with iOS 13.6, watchOS 5.3.3, Watch4,3
                 fid = fopen(curtxt);          
                 record.name = fgetl(fid);
 
                 tmp = fgetl(fid);
                 colon_hit = strfind(tmp,':');
-                record.birthdate = datetime(strtrim(tmp(colon_hit+[1:12])));
-
+                tmp = strtrim(tmp(colon_hit(1)+1:end));
+                if length(strfind(tmp,'.'))==1                    
+                    try
+                        record.birthdate = datetime(tmp(1:12), 'InputFormat', 'dd. MMM yyyy');
+                    catch                
+                        prompt = {['The birth date is ''' tmp '''. Please enter the date in this Matlab readable format:']};
+                        dlgtitle = 'Format of the birth date';
+                        dims = [1 50];
+                        definput = {'yyyy-MM-dd'};
+                        answer = inputdlg(prompt, dlgtitle, dims, definput);
+                        record.birthdate = datetime(answer, 'InputFormat', 'yyyy-MM-dd');
+                    end
+                else
+                    record.birthdate = datetime(strtrim(tmp(colon_hit+[1:12])));
+                end
+                
                 tmp = fgetl(fid);
                 hyphen_hit = strfind(tmp,'—');
                 BPM_hit = strfind(tmp,'BPM');
                 record.rhythm = strtrim(tmp(1:hyphen_hit-1));
                 record.bpm = str2double(tmp((BPM_hit-4):(BPM_hit-1)));
 
-                fgetl(fid);
-                fgetl(fid);
-                fgetl(fid);
-
                 tmp = fgetl(fid);
+                while  ~contains(tmp,':')
+                    tmp = fgetl(fid);
+                end
                 dot_hit = strfind(tmp,'.');
                 colon_hit = strfind(tmp,':');
-                record.start_date = datetime([tmp(dot_hit(1)+[-2:8]) tmp(colon_hit+[-2:2])], 'InputFormat', 'dd.MM.yyyy HH:mm');
+                if length(dot_hit)==1
+                    try
+                        record.start_date = datetime([tmp(dot_hit(1)+[-2:10]) tmp(colon_hit+[-2:2])], 'InputFormat', 'dd. MMM yyyy HH:mm');
+                    catch                
+                        prompt = {['The start date is ''' tmp '''. Please enter the recording start date in this Matlab readable format:']};
+                        dlgtitle = 'Format of the recording date';
+                        dims = [1 50];
+                        definput = {'yyyy-MM-dd HH:mm'};
+                        answer = inputdlg(prompt, dlgtitle, dims, definput);
+                        record.start_date = datetime(answer, 'InputFormat', 'yyyy-MM-dd HH:mm');
+                    end
+                else
+                    record.start_date = datetime([tmp(dot_hit(1)+[-2:8]) tmp(colon_hit+[-2:2])], 'InputFormat', 'dd.MM.yyyy HH:mm');
+                end
 
                 fgetl(fid);
                 tmp = fgetl(fid);
                 comma_hit = strfind(tmp,',');
-                fs_hit = strfind(tmp,' Hz');
-                hyphen_hit = strfind(tmp,'-');
+                fs_hit = strfind(tmp,'Hz');
+                hyphen_hit = [strfind(tmp,'-'), strfind(tmp,'—')];
                 space_hit = strfind(tmp,' ');
 
                 record.physical_dimension = tmp((space_hit(sum(space_hit<comma_hit(2)))+1):(comma_hit(2)-1)); %adu
                 slash_hit = strfind(record.physical_dimension,'/');
                 record.physical_dimension = record.physical_dimension((slash_hit+1):end); %adu
 
-                record.signalnames =  tmp((space_hit(sum(space_hit<comma_hit(3)))+1):(comma_hit(3)-1));
-                record.fs = str2double(tmp((space_hit(sum(space_hit<fs_hit))+1):(fs_hit-1)));
+                record.signalnames = tmp((space_hit(sum(space_hit<comma_hit(3)))+1):(comma_hit(3)-1));
                 record.fs = str2double(tmp((space_hit(sum(space_hit<fs_hit))+1):(fs_hit-1)));
                 record.version = strtrim(tmp((fs_hit+4):(hyphen_hit-1)));
 
@@ -369,7 +396,9 @@ else
 
         switch appleflag+2*kardia+3*aliveecg
             case 1
-              % Apple Watch / tested with iOS 13.6, watchOS 6.2.8, Watch5,2
+              % Apple Watch /
+              % tested with iOS 13.6, watchOS 6.2.8, Watch5,2
+              % tested with iOS 13.6, watchOS 5.3.3, Watch4,3
               
                 record.name = data_txt{1};                
                 colon_hit = strfind(data_txt{2},':');
@@ -557,7 +586,9 @@ else
       % extract ECG
         switch appleflag+2*kardia+3*aliveecg
             case 1
-              % Apple Watch / tested with iOS 13.6, watchOS 6.2.8, Watch5,2 
+              % Apple Watch /
+              % tested with iOS 13.6, watchOS 6.2.8, Watch5,2
+              % tested with iOS 13.6, watchOS 5.3.3, Watch4,3
                 front_hit = strfind(data,'<path');
                 back_hit_candidates = strfind(data,'/>');
                 back_hit = front_hit;
@@ -609,7 +640,7 @@ else
                 if path_syntax=='M'
                   % Search for optimal pair of location and scale to convert double to integer
                     jj=1;
-                    a = round(1/min(setdiff(abs(diff(ecg(jj,1:lengths(jj)))),0)));                        
+                    a = round(1/min(setdiff(abs(diff(ecg(jj,1:lengths(jj)))),0)));
                     ecg = ecg*a;
                 
                     for jj=1:num_paths
@@ -732,7 +763,7 @@ else
                 %plot(record.ann, record.ecg(record.ann), 'ok')
 
             case 3
-              % AliveCor report / tested with aliveecg 5.7.3     
+              % AliveCor report / tested with aliveecg 5.7.3
 
                 front_hit = strfind(data,'<path');
                 back_hit_candidates = strfind(data,'/>');
@@ -798,7 +829,7 @@ end
 
 
 if ~isempty(record)
-  % Remove leading and trailing NaNs and adjust annotations    
+  % Remove leading and trailing NaNs and adjust annotations
     nansum = sum(isnan(record.ecg), 1)==size(record.ecg,1);
     nanidx = find(nansum);
     if ~isempty(nanidx)
@@ -821,91 +852,5 @@ if ~isempty(record)
     
 end
 
-  %% Converting SVG path to Matlab matrix
-    function [mat_path, path_syntax] = path2mat(path)
-        dat = path(strfind(path,' d="')+4:end);
-        dat = dat(1:min(strfind(dat,'"'))-1);
-        dat = strrep(dat, ',', ' ');
-
-        alphabet = {'M';'m';'L';'l';'V';'v';'H';'h'};
-        vals = str2num(replace(dat, alphabet, {'';'';'';'';'';'';'';''}));
-        
-        mat_path = [];
-        path_syntax = [];
-        
-        if isempty(vals)            
-            warning(['Some SVG path appears to contain no values: ' dat(1:100) '...'])
-        else
-            hit_s = strfind(dat,' ');
-            hit_s = hit_s([true diff(hit_s)>1]);
-            
-            hit_idx = [];
-            hit_type = [];
-            for i=1:length(alphabet)
-                tmp = strfind(dat,alphabet{i});
-                hit_idx = [hit_idx; tmp'];
-                hit_type = [hit_type; repmat(alphabet{i}, length(tmp), 1)];
-            end
-            if length(hit_type)>1
-                hits = table(hit_idx,hit_type);
-            else
-                hits = table(hit_idx,{hit_type});
-            end
-            hits.Properties.VariableNames = {'idx','type'};
-            hits = sortrows(hits,'idx','ascend');            
-            
-            for i=1:size(hits,1)
-                if i==size(hits,1)
-                    cur_dat = str2num(dat(hits.idx(i)+1:end));                    
-                else
-                    cur_dat = str2num(dat(hits.idx(i)+1:hits.idx(i+1)-1));
-                end
-                
-                switch dat(hits.idx(i))
-                    case 'M'
-                      % M (uppercase) indicates that absolute coordinates will follow
-                        mat_path = [mat_path [cur_dat(1:2:end); cur_dat(2:2:end)]];
-                        path_syntax = 'M';
-                    case 'm'
-                      % m (lowercase) indicates that relative coordinates will follow
-                        mat_path = [mat_path [cumsum(cur_dat(1:2:end)); cumsum(cur_dat(2:2:end))]];
-                        path_syntax = 'm';
-                        
-                    case 'L'
-                      % Draw a line from the current point to the given
-                      % coordinate which becomes the new current point
-                      % L (uppercase) indicates that absolute coordinates will follow
-                        mat_path = [mat_path [cur_dat(1:2:end); cur_dat(2:2:end)]];                        
-                        
-                    case 'l'
-                      % Draw a line from the current point to the given
-                      % coordinate which becomes the new current point
-                      % l (lowercase) indicates that relative coordinates will follow
-                        mat_path = [mat_path [cumsum(cur_dat(1:2:end))+mat_path(1,end); cumsum(cur_dat(2:2:end))+mat_path(2,end)]];
-                        
-                    case 'V'
-                      % Draws a vertical line from the current point
-                      % V (uppercase) indicates that absolute coordinates will follow
-                        mat_path = [mat_path [repmat(mat_path(1,end),1,length(cur_dat)); cur_dat]];
-                          
-                    case 'v'
-                      % Draws a vertical line from the current point
-                      % v (lowercase) indicates that relative coordinates will follow
-                        mat_path = [mat_path [repmat(mat_path(1,end),1,length(cur_dat)); cumsum(cur_dat)+mat_path(2,end)]];
-                        
-                    case 'H'
-                      % Draws a horizontal line from the current point
-                      % H (uppercase) indicates that absolute coordinates will follow
-                        mat_path = [mat_path [cur_dat; repmat(mat_path(2,end),1,length(cur_dat))]];
-                        
-                    case 'h'
-                      % Draws a horizontal line from the current point
-                      % h (lowercase) indicates that relative coordinates will follow
-                        mat_path = [mat_path [cumsum(cur_dat)+mat_path(1,end); repmat(mat_path(2,end),1,length(cur_dat))]];
-
-                end
-            end            
-        end
-    end
 
 end

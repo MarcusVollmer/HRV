@@ -43,8 +43,8 @@ function write_edf(fname, signals, header)
 %   MIT License (MIT) Copyright (c) 2020 Marcus Vollmer,
 %   marcus.vollmer@uni-greifswald.de
 %   Feel free to contact me for discussion, proposals and issues.
-%   last modified: 18 August 2020
-%   version: 0.01
+%   last modified: 08 October 2020
+%   version: 0.02
 
 if nargin<3 || isempty(header)
     
@@ -95,7 +95,7 @@ fid = fopen(fname,'w');
     else
         patient = '';
     end
-        
+
     if strlength(patient)>80
         warning(['Local patient identification is too long in file: ' fname '. The information was cutted down to 80 characters.'])
         fwrite(fid, patient(1:80), 'char');
@@ -105,7 +105,7 @@ fid = fopen(fname,'w');
     
   % 80 ascii : local recording identification (mind item 4 of the additional EDF+ specs)
     if isfield(header,'version')
-        if strlength(patient)>80
+        if strlength(header.version)>80
             warning(['Local recording identification is too long in file: ' fname '. The information was cutted down to 80 characters.'])
             fwrite(fid, header.version(1:80), 'char');
         else
@@ -148,7 +148,7 @@ fid = fopen(fname,'w');
             fwrite(fid, pad(header.signalnames,16), 'char');
         else
             for i=1:ns
-                fwrite(fid, pad(header.signalnames(i),16), 'char');
+                fwrite(fid, pad(header.signalnames{i},16), 'char');
             end
         end
     else
@@ -161,7 +161,7 @@ fid = fopen(fname,'w');
             fwrite(fid, pad(header.transducer_type,80), 'char');
         else
             for i=1:ns
-                fwrite(fid, pad(header.transducer_type(i),80), 'char');
+                fwrite(fid, pad(header.transducer_type{i},80), 'char');
             end
         end
     else
@@ -174,7 +174,7 @@ fid = fopen(fname,'w');
             fwrite(fid, pad(header.physical_dimension,8), 'char');
         else
             for i=1:ns
-                fwrite(fid, pad(header.physical_dimension(i),8), 'char');
+                fwrite(fid, pad(header.physical_dimension{i},8), 'char');
             end
         end
     else

@@ -11,16 +11,16 @@ function HRVTool
 % Load BIOPAC ACQ (AcqKnowledge for PC) data version 1.3.0.0.
 % Copyright (c) 2009, Jimmy Shen
 %
-% Version: 1.05
+% Version: 1.06
 % Author: Marcus Vollmer
-% Date: 10 September 2020
+% Date: 20 October 2020
 
 F.fh = figure('Visible','off','Position',[0,0,1280,900],'PaperPositionMode','auto','DeleteFcn',@my_closereq, 'ResizeFcn', @my_resizereq);
 set(gcf,'Units','inches');
 
 global icons qrs_settings AppPath HRVTool_version HRVTool_version_date font_size font_size_factor colormode clr screenposition
-HRVTool_version = 1.05;
-HRVTool_version_date = '10 September 2020';
+HRVTool_version = 1.06;
+HRVTool_version_date = '20 October 2020';
 screenposition = get(gcf,'Position');
 set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4));
 
@@ -41,7 +41,7 @@ set(gcf,'PaperPosition',[0 0 screenposition(3:4)],'PaperSize',screenposition(3:4
 %     end
    
 % Add path for Matlab source code user
-   AppPath = cd;
+  AppPath = cd;
 
 addpath(genpath(AppPath))
 
@@ -613,7 +613,7 @@ function buttonStart_Callback(hObject, eventdata, handles)
             end
             
           % Structured array or vector
-            if isstruct(matObj)
+            if isstruct(matObj) || strcmp(class(matObj),'matlab.io.MatFile')
                 fn = fieldnames(matObj);
                 data_name = [];
 
@@ -654,8 +654,9 @@ function buttonStart_Callback(hObject, eventdata, handles)
                 Ann = [];
                 RR = [];
             else
+                FileName = genvarname(FileName);
                 matObj = struct(FileName,matObj);
-                data_name = FileName;                
+                data_name = FileName;
             end
 
             if ~isempty(data_name)
@@ -928,6 +929,11 @@ function buttonStart_Callback(hObject, eventdata, handles)
                         end
                     end  
                     catch
+                    end
+                    if max(size(dataArray{:,1}))<10
+                        fileID = fopen([get(F.heditFolder,'String') FileName],'r');
+                        dataArray = textscan(fileID, '%f');
+                        fclose(fileID);
                     end
                     sig_waveform = dataArray{:,1}; clearvars dataArray;                    
                     

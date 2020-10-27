@@ -86,7 +86,7 @@ signals = table();
     if ~isempty(phy_min)
         signals.physical_minimum = phy_min;
     else
-        signals.physical_minimum = NaN;
+        signals.physical_minimum(:) = NaN;
     end
 
 % ns * 8 ascii : ns * physical maximum (e.g. 500 or 40)
@@ -94,7 +94,7 @@ signals = table();
     if ~isempty(phy_max)
         signals.physical_maximum = phy_max;
     else
-        signals.physical_maximum = NaN;
+        signals.physical_maximum(:) = NaN;
     end
     
 % ns * 8 ascii : ns * digital minimum (e.g. -2048)
@@ -102,7 +102,7 @@ signals = table();
     if ~isempty(dig_min)
         signals.digital_minimum = dig_min;
     else
-        signals.digital_minimum = NaN;
+        signals.digital_minimum(:) = NaN;
     end
 
 % ns * 8 ascii : ns * digital maximum (e.g. 2047)
@@ -110,7 +110,7 @@ signals = table();
     if ~isempty(dig_max)
         signals.digital_maximum = dig_max;
     else
-        signals.digital_maximum = NaN;
+        signals.digital_maximum(:) = NaN;
     end
     
 % ns * 80 ascii : ns * prefiltering (e.g. HP:0.1Hz LP:75Hz)
@@ -129,10 +129,10 @@ signals = table();
     signals.Fs = signals.n/n_duration;
 
     if isnan(signals.scale)
-        signals.scale = 1;
+        signals.scale(:) = 1;
     end
     if isnan(signals.translation)
-        signals.translation = 0;
+        signals.translation(:) = 0;
     end
     
 if memory==1
