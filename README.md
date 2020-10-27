@@ -1,4 +1,4 @@
-# HRVTool v1.05
+# HRVTool v1.06
 ## Methods for analyzing Heart Rate Variability
 
 The present functions are originally made for Matlab R2016b. Errors may occur using older releases (at least R2014b required). Additional toolboxes are not required to run the basic analysis. 
@@ -14,7 +14,7 @@ The user interface has been tested on Windows 10, Linux Ubuntu 18.04 and Mac OS 
 
 ### Supported file types
 - [x] HRM - Polar files
-- [x] MAT - Matlab files containing waveforms or RR intervals (in ms)
+- [x] MAT - Matlab files, structures or workspace variables containing waveforms or RR intervals (in ms)
 - [x] TXT - text files containing waveforms or RR intervals (in ms)
 - [x] ECG - PhysioNet files (PhysioNet wfdb toolbox required)
 - [x] WAV - Hexoskin files
@@ -31,4 +31,4 @@ Copyright (c) 2009, Jimmy Shen
 All other supported files and functions are licensed under the terms of the MIT License (MIT) given in LICENSE and LICENSE_ICONS
 Copyright (c) 2015-2020 Marcus Vollmer
 
-10 September 2020
+20 October 2020
